@@ -6,4 +6,4 @@ For alternative licensing options, please contact the Dartmouth College OpenAV p
 
 # microservice-zoom-room-sdk
 
-!! work in progress, not usable as of yet.
+!! work in progress, barely usable if you are familiar with microserives. More to come soon.
