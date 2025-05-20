@@ -164,6 +164,10 @@ void OpenAVControllerApp::InitServices()
     IMeetingAudioHelperSink* meetingAudioHelperSink = new AutoIMeetingAudioHelperSink() ;
     meetingAudioHelper->RegisterSink( meetingAudioHelperSink ) ;
 
+    IMeetingVideoHelper*     meetingVideoHelper = meetingService->GetMeetingVideoHelper() ;
+    IMeetingVideoHelperSink* meetingVideoHelperSink = new AutoIMeetingVideoHelperSink() ;
+    meetingVideoHelper->RegisterSink( meetingVideoHelperSink ) ;
+
     createNBStdin() ;
 }
 
@@ -181,7 +185,6 @@ void OpenAVControllerApp::HeartBeat()
 
 void OpenAVControllerApp::ReceiveCommand(std::string command)
 {
-    // std::cout << " ReceiveCommand:" << command << std::endl;
     std::istringstream iss( command ) ;
     std::string        api;
     iss >> api ;
@@ -325,9 +328,17 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             return ;
         }
 
-        ZRCSDKError result = m_roomService->GetMeetingService()->ExitMeeting( ExitMeetingCmdLeave ) ;
-        if( result!=ZRCSDKERR_SUCCESS ) {
-            std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+        if( get_state_datum("meeting/connection_stage")!="" ) {
+            std::cout << ">   it looks like we were waiting for a passcode, cancelling that instead" << std::endl ;
+            ZRCSDKError result = m_roomService->GetMeetingService()->CancelEnteringMeetingPassword() ;
+            if( result!=ZRCSDKERR_SUCCESS ) {
+                std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+            }
+        } else {
+            ZRCSDKError result = m_roomService->GetMeetingService()->ExitMeeting( ExitMeetingCmdLeave ) ;
+            if( result!=ZRCSDKERR_SUCCESS ) {
+                std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+            }
         }
     }
     else if( api=="end_meeting" ) {
@@ -342,9 +353,17 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             return ;
         }
 
-        ZRCSDKError result = m_roomService->GetMeetingService()->ExitMeeting( ExitMeetingCmdEnd ) ;
-        if( result!=ZRCSDKERR_SUCCESS ) {
-            std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+        if( get_state_datum("meeting/connection_stage")!="" ) {
+            std::cout << ">   it looks like we were waiting for a passcode, cancelling that instead" << std::endl ;
+            ZRCSDKError result = m_roomService->GetMeetingService()->CancelEnteringMeetingPassword() ;
+            if( result!=ZRCSDKERR_SUCCESS ) {
+                std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+            }
+        } else {
+            ZRCSDKError result = m_roomService->GetMeetingService()->ExitMeeting( ExitMeetingCmdEnd ) ;
+            if( result!=ZRCSDKERR_SUCCESS ) {
+                std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+            }
         }
     }
     else if( api=="mute") {
@@ -389,6 +408,49 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
         }
     }
+    else if( api=="mute_video") {
+        std::cout << "> mute_video" << std::endl ;
+
+        if( !m_roomService ) {
+            std::cout << ">   error: no room service" ;
+            return ;
+        }
+        if( !m_roomService->GetMeetingService() ) {
+            std::cout << ">   error: no meeting service" ;
+            return ;
+        }
+        if( !m_roomService->GetMeetingService()->GetMeetingVideoHelper() ) {
+            std::cout << ">   error: no video helper" ;
+            return ;
+        }
+
+        ZRCSDKError result = m_roomService->GetMeetingService()->GetMeetingVideoHelper()->UpdateMyVideo( true ) ;
+        if( result!=ZRCSDKERR_SUCCESS ) {
+            std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+        }
+    }
+    else if( api=="unmute_video") {
+        std::cout << "> unmute_video" << std::endl ;
+
+        if( !m_roomService ) {
+            std::cout << ">   error: no room service" ;
+            return ;
+        }
+        if( !m_roomService->GetMeetingService() ) {
+            std::cout << ">   error: no meeting service" ;
+            return ;
+        }
+        if( !m_roomService->GetMeetingService()->GetMeetingVideoHelper() ) {
+            std::cout << ">   error: no video helper" ;
+            return ;
+        }
+
+        ZRCSDKError result = m_roomService->GetMeetingService()->GetMeetingVideoHelper()->UpdateMyVideo( false ) ;
+        if( result!=ZRCSDKERR_SUCCESS ) {
+            std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+        }
+    }
+
     else if( api=="get_camera_list" ) {
         std::cout << "> get_camera_list" << std::endl ;
 

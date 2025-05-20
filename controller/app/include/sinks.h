@@ -19,6 +19,7 @@
 #include "ISettingService.h"
 #include "IMeetingShareHelper.h"
 #include "IMeetingAudioHelper.h"
+#include "IMeetingVideoHelper.h"
 
 USING_NS_ZRCSDK
 
@@ -147,6 +148,36 @@ std::string get_state( bool as_json=true ) {
 
     return to_return ;
 }
+
+
+std::string get_state_datum( const std::string& path ) {
+    sqlite3* db = nullptr ;
+    int rc = sqlite3_open( "/dev/shm/microservice.db", &db ) ;
+    check( rc, db, "open" ) ;
+
+    const char* select_sql =
+        "SELECT datum FROM data WHERE device=:device AND"
+        "                             path=:path LIMIT 1" ;
+    sqlite3_stmt* select = nullptr ;
+    rc = sqlite3_prepare_v2( db, select_sql, -1, &select, nullptr ) ;
+    check( rc, db, "select prepare" ) ;
+
+    sqlite3_bind_text( select, sqlite3_bind_parameter_index(select, ":device"), device.c_str(), -1, SQLITE_TRANSIENT ) ;
+    sqlite3_bind_text( select, sqlite3_bind_parameter_index(select, ":path"), path.c_str(), -1, SQLITE_TRANSIENT ) ;
+
+    std::string to_return = "" ;
+    rc = sqlite3_step( select ) ;
+    if( rc==SQLITE_ROW ) {
+        std::string datum = reinterpret_cast<const char*>( sqlite3_column_text(select, 0) ) ;
+        to_return = datum ;
+    }
+    check(rc, db, "select loop done");
+    sqlite3_finalize(select);
+    sqlite3_close( db ) ;
+
+    return to_return ;
+}
+
 
 
 void update_state( const std::string& path, const std::string& datum ) {
@@ -377,7 +408,21 @@ class AutoIMeetingServiceSink : public IMeetingServiceSink
     }
 
     virtual void OnMeetingNeedsPasswordNotification(bool showPasswordDialog, bool wrongAndRetry, const ConfDeviceLockStatus& lockStatus) override {
-        std::cout << "< OnMeetingNeedsPasswordNotification" << std::endl ;
+        std::cout << "< OnMeetingNeedsPasswordNotification: " <<
+            " showPasswordDialog=" << showPasswordDialog <<
+            " wrongAndRetry=" << wrongAndRetry <<
+            " locked=" << lockStatus.isLocked <<
+        std::endl ;
+
+        if( lockStatus.isLocked ) {
+            update_state( "meeting/connection_stage", "locked" ) ;
+        } else if( showPasswordDialog && wrongAndRetry ) {
+            update_state( "meeting/connection_stage", "wrong_passcode_retry" ) ;
+        } else if( showPasswordDialog ) {
+            update_state( "meeting/connection_stage", "needs_passcode" ) ;
+        } else {
+            delete_state( "meeting/connection_stage%" ) ;
+        }
     }
 
     virtual void OnConfDeviceLockStatusNotification(const ConfDeviceLockStatus& status) override {}
@@ -423,7 +468,6 @@ class AutoIMeetingAudioHelperSink : public IMeetingAudioHelperSink
 
 class AutoIMeetingShareHelperSink : public IMeetingShareHelperSink
 {
-    // implements IMeetingShareHelperSink
     virtual void OnStartLocalPresentNotification (const LocalPresentationInfo &info) override {}
 
     virtual void OnStartLocalPresentResult (bool isSharingMeeting, SharingInstructionDisplayState displayState) override {}
@@ -459,4 +503,33 @@ class AutoIMeetingShareHelperSink : public IMeetingShareHelperSink
     virtual void OnSlideControlNotification (const std::vector< SlideControlInfo > &slideControlInfos) override {}
 
     virtual void OnDocsShareSettingsNotification (const DocsShareSettingsInfo &info) override {}
+};
+
+
+class AutoIMeetingVideoHelperSink : public IMeetingVideoHelperSink
+{
+    virtual void OnUpdateMyVideoNotification (const VideoStatus &videoStatus) override {
+        std::cout << "< OnUpdateMyVideoStatus: " <<
+            " hasSource=" << videoStatus.hasSource <<
+            " receiving=" << videoStatus.receiving <<
+            " sending=" << videoStatus.sending <<
+            " canControl=" << videoStatus.canControl <<
+        std::endl ;
+
+        if( videoStatus.sending ) {
+            update_state( "meeting/video_muted", "false" ) ;
+        } else {
+            update_state( "meeting/video_muted", "true" ) ;
+        }
+    }
+
+    virtual void OnMuteUserVideoNotification (int32_t userID, const VideoStatus &videoStatus) override {}
+
+    virtual void OnAskStartVideoByHostNotification (int32_t userID) override {}
+
+    virtual void OnUpdateScreenStatusForPinNotification (const std::vector< ScreenStatusForPin > &pinStatusList, PinShareWarningType warningType) override {}
+
+    virtual void OnSpotlightStatusNotification (const SpotlightStatus &spotlightStatus) override {}
+
+    virtual void OnUpdateAllowAttendeesStartVideo (bool allow) override {}
 };
