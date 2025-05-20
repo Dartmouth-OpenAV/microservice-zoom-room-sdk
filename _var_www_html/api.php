@@ -4,7 +4,6 @@
 $refresh_data_every = 1; // minutes
 $refresh_for_how_long = 5; // minutes
 $maintenance_every = 10; // iteration
-$zoom_room_command_retry_count = 2;
 
 //  _____         _      ____                              _
 // |_   _|_ _ ___| | __ |  _ \ _ __ ___   ___ ___  ___ ___(_)_ __   __ _
@@ -779,9 +778,9 @@ function get_meeting_video_muted($device)
 function set_meeting_video_muted($device, $data)
 {
     if ($data == "true" || $data === true) {
-        file_put_contents("/dev/shm/{$device}.fifo", "video_mute\n");
+        file_put_contents("/dev/shm/{$device}.fifo", "mute_video\n");
     } elseif ($data == "false" || $data === false) {
-        file_put_contents("/dev/shm/{$device}.fifo", "video_unmute\n");
+        file_put_contents("/dev/shm/{$device}.fifo", "unmute_video\n");
     }
 }
 
