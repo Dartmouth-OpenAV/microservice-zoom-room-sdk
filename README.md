@@ -20,7 +20,7 @@ The first command you'll need to execute before any other is to pair with Zoom, 
 
 ```pair <activation_code>```
 
-You can get a list of available commands using the `help` command. Everything should be pretty self-explanatory beyond that.
+You can get a list of available commands using the `help` command. Everything should be pretty self-explanatory after that.
 
 
 ### Demo
