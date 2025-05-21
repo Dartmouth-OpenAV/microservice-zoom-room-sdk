@@ -25,7 +25,7 @@ You can get a list of available commands using the `help` command. Everything sh
 
 ### Demo
 
-![Demo Gif](zoom_room_sdk_interactive_demo.gif)
+![Demo Gif](zrsdk_interactive_demo.gif)
 
 
 ## REST API
