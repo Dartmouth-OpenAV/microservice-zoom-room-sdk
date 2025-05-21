@@ -25,7 +25,7 @@ You can get a list of available commands using the `help` command. Everything sh
 
 ## REST API
 
-This is the usual way to interact with microservice and the collection of requests is [here](/OpenAV microservice Zoom Room SDK.json).
+This is the usual way to interact with microservice and the collection of requests is [here](https://raw.githubusercontent.com/Dartmouth-OpenAV/microservice-zoom-room-sdk/refs/heads/main/OpenAV%20microservice%20Zoom%20Room%20SDK.json).
 
 
 ## Completeness
