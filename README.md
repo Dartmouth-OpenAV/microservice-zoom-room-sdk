@@ -16,7 +16,7 @@ This microservice is unique in that along with the usual REST API, it can be ins
 
 The first command you'll need to execute before any other is to pair with Zoom, you need to get your Activation Code from the Zoom Room's basic settings to do so.
 
-[Zoom Room Activation Code](/activation_code.png)
+![Zoom Room Activation Code](/activation_code.png)
 
 ```pair <activation_code>```
 
@@ -25,7 +25,7 @@ You can get a list of available commands using the `help` command. Everything sh
 
 ### Demo
 
-[Demo Gif](zoom_room_sdk_interactive_demo.gif)
+![Demo Gif](zoom_room_sdk_interactive_demo.gif)
 
 
 ## REST API
