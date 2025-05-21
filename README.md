@@ -16,11 +16,17 @@ This microservice is unique in that along with the usual REST API, it can be ins
 
 The first command you'll need to execute before any other is to pair with Zoom, you need to get your Activation Code from the Zoom Room's basic settings to do so.
 
-![Zoom Room Activation Code](/activation_code.png)
+![Zoom Room Activation Code](/activation_code.png | width=250 )
 
 ```pair <activation_code>```
 
 You can get a list of available commands using the `help` command. Everything should be pretty self-explanatory beyond that.
+
+
+## REST API
+
+This is the usual way to interact with microservice and the collection of requests is [here](/OpenAV microservice Zoom Room SDK.json).
+
 
 ## Completeness
 

@@ -1,0 +1,271 @@
+{
+	"info": {
+		"_postman_id": "76ee98e6-561b-4275-8b2c-d745b480aa78",
+		"name": "OpenAV microservice Zoom Room SDK",
+		"description": "HAR To Postman Generated Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32668379"
+	},
+	"item": [
+		{
+			"name": "Join Meeting",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"meeting_id\":\"{{meeting_id}}\",\n\t\"meeting_passcode\":\"{{meeting_passcode}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting",
+					"protocol": "http",
+					"host": [
+						"{{microservice_fqdn}}"
+					],
+					"port": "{{microservice_port}}",
+					"path": [
+						":{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+						"meeting"
+					],
+					"variable": [
+						{
+							"key": "{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Leave Meeting",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting",
+					"protocol": "http",
+					"host": [
+						"{{microservice_fqdn}}"
+					],
+					"port": "{{microservice_port}}",
+					"path": [
+						":{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+						"meeting"
+					],
+					"variable": [
+						{
+							"key": "{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Meeting Info",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting",
+					"protocol": "http",
+					"host": [
+						"{{microservice_fqdn}}"
+					],
+					"port": "{{microservice_port}}",
+					"path": [
+						":{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+						"meeting"
+					],
+					"variable": [
+						{
+							"key": "{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Mute",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting/muted",
+					"protocol": "http",
+					"host": [
+						"{{microservice_fqdn}}"
+					],
+					"port": "{{microservice_port}}",
+					"path": [
+						":{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+						"meeting",
+						"muted"
+					],
+					"variable": [
+						{
+							"key": "{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Set Mute",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "true",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting/muted",
+					"protocol": "http",
+					"host": [
+						"{{microservice_fqdn}}"
+					],
+					"port": "{{microservice_port}}",
+					"path": [
+						":{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+						"meeting",
+						"muted"
+					],
+					"variable": [
+						{
+							"key": "{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Video Mute",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting/video_muted",
+					"protocol": "http",
+					"host": [
+						"{{microservice_fqdn}}"
+					],
+					"port": "{{microservice_port}}",
+					"path": [
+						":{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+						"meeting",
+						"video_muted"
+					],
+					"variable": [
+						{
+							"key": "{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Set Video Mute",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "true",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting/video_muted",
+					"protocol": "http",
+					"host": [
+						"{{microservice_fqdn}}"
+					],
+					"port": "{{microservice_port}}",
+					"path": [
+						":{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+						"meeting",
+						"video_muted"
+					],
+					"variable": [
+						{
+							"key": "{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
