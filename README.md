@@ -14,11 +14,9 @@ This microservice is unique in that along with the usual REST API, it can be ins
 
 ```docker run -ti -e INTERACTIVE=true  ghcr.io/dartmouth-openav/microservice-zoom-room-sdk:latest```
 
-The first command you'll need to execute before any other is to pair with Zoom, you need to get your Activation Code from the Zoom Room's basic settings to do so.
+The first command you'll need to execute before any other is to pair with Zoom: ```pair <activation_code>```. You need to get your Activation Code from the Zoom Room's basic settings:
 
 ![Zoom Room Activation Code](/activation_code.png)
-
-```pair <activation_code>```
 
 You can get a list of available commands using the `help` command. Everything should be pretty self-explanatory after that.
 
