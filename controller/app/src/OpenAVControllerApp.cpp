@@ -191,9 +191,9 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
 
     if( api=="help" ) {
         std::cout << "available commands:" << std::endl ;
-        std::cout << "  print_state" << std::endl ;
         std::cout << "  pair <activation code>" << std::endl ;
         std::cout << "  unpair" << std::endl ;
+        std::cout << "  get_state" << std::endl ;
         std::cout << "  join_meeting <meeting id>" << std::endl ;
         std::cout << "  send_meeting_passcode <meeting password>" << std::endl ;
         std::cout << "  start_instant_meeting" << std::endl ;
@@ -202,6 +202,8 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
         std::cout << "  end_meeting" << std::endl ;
         std::cout << "  mute" << std::endl ;
         std::cout << "  unmute" << std::endl ;
+        std::cout << "  mute_video" << std::endl ;
+        std::cout << "  unmute_video" << std::endl ;
         std::cout << "  get_camera_list" << std::endl ;
         std::cout << "  get_current_camera" << std::endl ;
         std::cout << "  share_camera" << std::endl ;
@@ -450,7 +452,6 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
         }
     }
-
     else if( api=="get_camera_list" ) {
         std::cout << "> get_camera_list" << std::endl ;
 
@@ -535,30 +536,6 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
         }
     }
-    // else if( api=="test" ) {
-    //     std::cout << "> test" << std::endl;
-
-    //     if( !m_roomService ) {
-    //         std::cout << ">   error: no room service" ;
-    //         return ;
-    //     }
-    //     if( !m_roomService->GetMeetingService() ) {
-    //         std::cout << ">   error: no meeting service" ;
-    //         return ;
-    //     }
-    //     if( !m_roomService->GetMeetingService()->GetMeetingShareHelper() ) {
-    //         std::cout << ">   error: no meeting share helper" ;
-    //         return ;
-    //     }
-    //     // ZRCSDKError result = m_roomService->GetMeetingService()->GetMeetingShareHelper()->LaunchSharingMeeting( false, SharingInstructionDisplayStateWhiteboardCamera ) ;
-    //     // if( result!=ZRCSDKERR_SUCCESS ) {
-    //     //     std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
-    //     // }
-    //     ZRCSDKError result1 = m_roomService->GetMeetingService()->GetMeetingShareHelper()->ShowSharingInstruction( true, SharingInstructionDisplayStateDesktop ) ;
-    //     if( result1!=ZRCSDKERR_SUCCESS ) {
-    //         std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
-    //     }
-    // }
     else if( api!="" ) {
         std::cout << "> error: unknown command: " << api << std::endl ;
     }
