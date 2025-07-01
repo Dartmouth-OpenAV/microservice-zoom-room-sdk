@@ -137,6 +137,32 @@
 			"response": []
 		},
 		{
+			"name": "Get Errors",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/errors",
+					"protocol": "http",
+					"host": [
+						"{{microservice_fqdn}}"
+					],
+					"port": "{{microservice_port}}",
+					"path": [
+						":{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+						"errors"
+					],
+					"variable": [
+						{
+							"key": "{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "Set Mute",
 			"request": {
 				"method": "PUT",

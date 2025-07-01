@@ -643,6 +643,20 @@ function add_error($device, $message)
 }
 
 
+function get_errors() {
+    global $device ;
+
+    $errors = sqlite_query( "SELECT message FROM errors WHERE device=:device", [':device'=>$device] ) ;
+    sqlite_query( "DELETE FROM errors WHERE device=:device", [':device'=>$device] ) ;
+
+    if( count($errors)>0 ) {
+        close_with_500( $errors ) ;
+    } else {
+        close_with_200( "no errors" ) ;
+    }
+}
+
+
 
 // TODO get errors
 
