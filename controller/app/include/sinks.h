@@ -484,6 +484,8 @@ class AutoIMeetingShareHelperSink : public IMeetingShareHelperSink
 
     virtual void OnUpdateCameraSharingStatus (const CameraSharingStatus &status) override {
         std::cout << "< OnUpdateCameraSharingStatus: " << status.deviceID << std::endl ;
+
+        update_state( "meeting/share/camera", status.deviceID ) ;
     }
 
     virtual void OnSharingSourceNotification (const std::vector< ShareSource > &zrShareSources, const std::vector< ShareSource > &zrwShareSources) override {}

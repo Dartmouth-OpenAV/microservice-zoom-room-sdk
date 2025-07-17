@@ -274,6 +274,14 @@ $path = implode( "/", array_slice($request_uri, 2) ) ;
 $path = explode( "?", $path ) ;
 $path = $path[0] ;
 
+if( $path=="meeting/share/camera" &&
+    $method=="GET" ) {
+    get() ;
+}
+if( $path=="meeting/share/camera" &&
+    $method=="PUT" ) {
+    set() ;
+}
 
 if( $path=="meeting/muted" &&
     $method=="GET" ) {
@@ -602,6 +610,15 @@ function set_meeting( $device, $data ) {
 
 function unset_meeting( $device, $data ) {
     file_put_contents( "/dev/shm/{$device}.fifo", "leave_meeting\n" ) ;
+}
+
+function get_meeting_share_camera( $device ) {
+    // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
+    return null ;
+}
+
+function set_meeting_share_camera( $device, $data ) {
+    file_put_contents( "/dev/shm/{$device}.fifo", "share_camera {$data}\n" ) ;
 }
 
 
