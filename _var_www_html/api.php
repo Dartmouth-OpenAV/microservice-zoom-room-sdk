@@ -413,6 +413,10 @@ function get_hierarchy() {
         
 
         $data = get_path_hierarchy( $data ) ;
+
+        if( count($data)==1 ) {
+            $data = $data[array_keys($data)[0]] ;
+        }
         
         if( $data===null || $data==="" ) {
             close_with_204() ;
