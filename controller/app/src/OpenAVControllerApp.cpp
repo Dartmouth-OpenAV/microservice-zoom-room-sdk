@@ -168,6 +168,10 @@ void OpenAVControllerApp::InitServices()
     IMeetingVideoHelperSink* meetingVideoHelperSink = new AutoIMeetingVideoHelperSink() ;
     meetingVideoHelper->RegisterSink( meetingVideoHelperSink ) ;
 
+    IMeetingListHelper*     meetingListHelper = meetingService->GetMeetingListHelper() ;
+    IMeetingListHelperSink* meetingListHelperSink = new AutoIMeetingListHelperSink() ;
+    meetingListHelper->RegisterSink( meetingListHelperSink ) ;
+
     createNBStdin() ;
 }
 
@@ -534,6 +538,27 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
         ZRCSDKError result = m_roomService->GetMeetingService()->GetMeetingShareHelper()->StopSharing() ;
         if( result!=ZRCSDKERR_SUCCESS ) {
             std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+        }
+    }
+    else if ( api=="get_meeting_list" ) {
+        std::cout << "> get_meeting_list" << std::endl ;
+
+        if( !m_roomService ) {
+            std::cout << ">   error: no room service" ;
+            return ;
+        }
+        if( !m_roomService->GetMeetingService() ) {
+            std::cout << ">   error: no meeting service" ;
+            return ;
+        }
+        if( !m_roomService->GetMeetingService()->GetMeetingListHelper() ) {
+            std::cout << ">   error: no meeting list helper" ;
+            return ;
+        }
+        
+        ZRCSDKError result = m_roomService->GetMeetingService()->GetMeetingListHelper()->ListMeeting() ;
+        if( result!=ZRCSDKERR_SUCCESS ) {
+            std::cout << ">   error: unable to get meeting list (ZRCSDKError=" << result << ")" << std::endl ;
         }
     }
     else if( api!="" ) {

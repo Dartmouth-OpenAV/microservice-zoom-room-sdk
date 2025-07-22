@@ -323,6 +323,10 @@ if( $path=="meeting" &&
     $method=="DELETE" ) {
     delete() ;
 }
+if( $path=="meeting_list" &&
+    $method=="GET" ) {
+    get() ;
+}
 if( $path=="errors" &&
     $method=="GET" ) {
     get_errors() ;
@@ -627,6 +631,11 @@ function set_meeting_share_camera( $device, $data ) {
 
 
 function get_meeting_muted( $device ) {
+    // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
+    return null ;
+}
+
+function get_meeting_list( $device ) {
     // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
     return null ;
 }

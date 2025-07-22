@@ -20,11 +20,26 @@
 #include "IMeetingShareHelper.h"
 #include "IMeetingAudioHelper.h"
 #include "IMeetingVideoHelper.h"
+#include "IMeetingListHelper.h"
 
 USING_NS_ZRCSDK
 
 using json = nlohmann::json ;
 
+// ChatGPT: convert MeetingItem vector to json array
+json meetingListToJson(const std::vector<MeetingItem>& meetings) {
+    json j = json::array();
+    for (const auto& m : meetings) {
+        j.push_back({
+            {"meeting_id", m.meetingNumber},
+            {"meeting_name", m.meetingName},
+            {"start_time", m.startTime},
+            {"end_time", m.endTime},
+            {"is_private", m.isPrivate}
+        });
+    }
+    return j;
+}
 
 // ChatGPT: split string by '.'
 std::vector<std::string> splitKey(const std::string& key) {
@@ -534,4 +549,26 @@ class AutoIMeetingVideoHelperSink : public IMeetingVideoHelperSink
     virtual void OnSpotlightStatusNotification (const SpotlightStatus &spotlightStatus) override {}
 
     virtual void OnUpdateAllowAttendeesStartVideo (bool allow) override {}
+};
+
+class AutoIMeetingListHelperSink : public IMeetingListHelperSink
+{
+    virtual void OnUpdateMeetingList (ListMeetingResult result, const std::vector< MeetingItem > &meetingList) override {
+        std::cout << "< OnUpdateMeetingList" << std::endl ;
+        if (result == ListMeetingResult::LIST_MEETING_SUCCESS ) {
+            std::cout << meetingListToJson(meetingList).dump() << std::endl ;
+        }
+        update_state( "meeting_list", meetingListToJson(meetingList).dump() ) ;
+    }
+
+    virtual void OnUpdatedScheduleCalendarEventNotification (ScheduleCalendarEventResult scheduleResult) override {}
+
+    virtual void OnUpdatedDeleteCalendarEventNotification (DeleteCalendarEventResult deleteResult) override {}
+
+    virtual void OnShowUpcomingMeetingAlertResult (int32_t result, const MeetingItem &meetingItem) override {}
+
+    virtual void OnCloseUpcomingMeetingAlertResult (int32_t result) override {}
+
+    virtual void OnMeetingWillReleaseAutomatically (const MeetingItem &meetingItem) override {}
+
 };
