@@ -497,7 +497,12 @@ class AutoIMeetingShareHelperSink : public IMeetingShareHelperSink
 
     virtual void OnSharingStatusNotification (const SharingStatus &status) override {}
 
-    virtual void OnUpdateAirPlayBlackMagicStatus (const AirplayBlackMagicStatus &status) override {}
+    virtual void OnUpdateAirPlayBlackMagicStatus (const AirplayBlackMagicStatus &status) override {
+        std::cout << "< OnUpdateAirPlayBlackMagicStatus " << std::endl ;
+
+        update_state( "sharing_key", status.directPresentationSharingKey ) ;
+        update_state( "pairing_code", status.directPresentationPairingCode ) ;
+    }
 
     virtual void OnUpdateCameraSharingStatus (const CameraSharingStatus &status) override {
         std::cout << "< OnUpdateCameraSharingStatus: " << status.deviceID << std::endl ;

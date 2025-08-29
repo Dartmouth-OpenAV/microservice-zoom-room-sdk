@@ -331,6 +331,14 @@ if( $path=="meeting_list" &&
     $method=="GET" ) {
     get() ;
 }
+if( $path=="sharing_key" &&
+    $method=="GET" ) {
+    get() ;
+}
+if( $path=="pairing_code" &&
+    $method=="GET" ) {
+    get() ;
+}
 if( $path=="errors" &&
     $method=="GET" ) {
     get_errors() ;
