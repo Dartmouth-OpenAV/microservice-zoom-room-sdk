@@ -542,12 +542,10 @@ function set_meeting( $device, $data ) {
         add_error( $device, "erroneous data provided to join_meeting with: " . json_encode($data) ) ;
     } else {
         // maybe we're already in a meeting?
-        if( sqlite_query("SELECT COUNT(1) FROM data WHERE device=:device AND
-                                                          path=:path", [$device,
-                                                                        "meeting/status"], true)>0 &&
-            sqlite_query("SELECT datum FROM data WHERE device=:device AND
+        if( sqlite_query("SELECT datum FROM data WHERE device=:device AND
                                                        path=:path", [$device,
                                                                       "meeting/status"], true)=="in_meeting" ) {
+            echo "already in meeting\n" ;
             sqlite_query( "INSERT INTO data (device,
                                              path,
                                              datum,
@@ -559,74 +557,79 @@ function set_meeting( $device, $data ) {
                                                path) DO UPDATE SET datum=:datum", [':device'=>$device,
                                                                                    ':path'=>"meeting/last_join_result",
                                                                                    ':datum'=>"failure - already in meeting"] ) ;
-        }
-
-        file_put_contents( "/dev/shm/{$device}.fifo", "join_meeting {$data['meeting_id']}\n" ) ;
-
-        // do we need to send a passcode?
-        $meeting_status = null ;
-        $passcode_has_been_sent = false ;
-        $safety_counter = 60 ; // sleeps are 0.1s, so that's 6s total
-        while( $meeting_status!="in_meeting" ) {
-            $meeting_status_count = sqlite_query( "SELECT COUNT(1) FROM data WHERE device=:device AND
-                                                                                        path=:path", [':device'=>$device,
-                                                                                                      ':path'=>"meeting/status"], true ) ;
-            if( $meeting_status_count==0 ) {
-                $safety_counter-- ;
-                if( $safety_counter<0 ) {
-                    break ;
-                } else {
-                    usleep( 100000 ) ;
-                }
-            } else {
-                $meeting_status = sqlite_query( "SELECT datum FROM data WHERE device=:device AND
-                                                                              path=:path", [':device'=>$device,
-                                                                                            ':path'=>"meeting/status"], true ) ;
-                if( $meeting_status=="connecting" ) {
-                    $connection_stage = sqlite_query( "SELECT datum FROM data WHERE device=:device AND
+        } else {
+            $meeting_connection_stage = sqlite_query( "SELECT datum FROM data WHERE device=:device AND
                                                                                     path=:path", [':device'=>$device,
-                                                                                                  ':path'=>"meeting/connection_stage"], true ) ;
-                     echo "meeting_connection_stage: {$connection_stage}\n" ;
-                    if( substr_count($connection_stage, "needs_passcode")>0 &&
-                        $data['meeting_passcode']!="" &&
-                        !$passcode_has_been_sent ) {
-                        // now is the time to send in the passcode
-                        file_put_contents( "/dev/shm/{$device}.fifo", "send_meeting_passcode {$data['meeting_passcode']}\n" ) ;
-                        $passcode_has_been_sent = true ;
-                    }
-                } else if( $meeting_status=="in_meeting" ) {
-                    // all right!
-                    sqlite_query( "INSERT INTO data (device,
-                                               path,
-                                               datum,
-                                               no_refresh) VALUES (:device,
-                                                                   :path,
-                                                                   :datum,
-                                                                   'true')
-                                           ON CONFLICT (device,
-                                                        path) DO UPDATE SET datum=:datum", [':device'=>$device,
-                                                                                            ':path'=>"meeting/last_join_result",
-                                                                                            ':datum'=>"success"] ) ;
-                    break ;
+                                                                                                ':path'=>"meeting/connection_stage"], true ) ;
+            if( $meeting_connection_stage=="needs_passcode" ) {
+                echo "looks like we are waiting on a passcode from a previous operation, cancelling\n" ;
+                file_put_contents( "/dev/shm/{$device}.fifo", "cancel_entering_meeting_password\n" ) ;
+                sleep( 2 ) ;
+            }
+
+            echo "join_meeting\n" ;
+            file_put_contents( "/dev/shm/{$device}.fifo", "join_meeting {$data['meeting_id']}\n" ) ;
+
+            // do we need to send a passcode?
+            $meeting_status = null ;
+            $passcode_has_been_sent = false ;
+            $safety_counter = 50 ; // sleeps are 0.2s, so that's 10s total
+            while( $meeting_status!="in_meeting" ) {
+                usleep( 200000 ) ;
+                echo "." ;
+                $safety_counter-- ;
+                if( $safety_counter<=0 ) {
+                    echo "safety counter reached\n" ;
                 } else {
-                    usleep( 100000 ) ;
+                    $meeting_status = sqlite_query( "SELECT datum FROM data WHERE device=:device AND
+                                                                                  path=:path", [':device'=>$device,
+                                                                                                ':path'=>"meeting/status"], true ) ;
+                    echo "meeting_status: {$meeting_status}\n" ;
+                    if( $meeting_status=="connecting" ) {
+                        $connection_stage = sqlite_query( "SELECT datum FROM data WHERE device=:device AND
+                                                                                        path=:path", [':device'=>$device,
+                                                                                                      ':path'=>"meeting/connection_stage"], true ) ;
+                        echo "meeting_connection_stage: {$connection_stage}\n" ;
+                        if( substr_count($connection_stage, "needs_passcode")>0 &&
+                            $data['meeting_passcode']!="" &&
+                            !$passcode_has_been_sent ) {
+                            // now is the time to send in the passcode
+                            file_put_contents( "/dev/shm/{$device}.fifo", "send_meeting_passcode {$data['meeting_passcode']}\n" ) ;
+                            $passcode_has_been_sent = true ;
+                        }
+                    } else if( $meeting_status=="in_meeting" ) {
+                        // all right!
+                        echo "all set\n" ;
+                        sqlite_query( "INSERT INTO data (device,
+                                                   path,
+                                                   datum,
+                                                   no_refresh) VALUES (:device,
+                                                                       :path,
+                                                                       :datum,
+                                                                       'true')
+                                               ON CONFLICT (device,
+                                                            path) DO UPDATE SET datum=:datum", [':device'=>$device,
+                                                                                                ':path'=>"meeting/last_join_result",
+                                                                                                ':datum'=>"success"] ) ;
+                        break ;
+                    }
                 }
             }
-            echo "meeting_status: {$meeting_status}\n" ;
-        }
 
-        if( $meeting_status!="in_meeting" ) {
-            sqlite_query( "INSERT INTO data (device,
-                                               path,
-                                               datum,
-                                               no_refresh) VALUES (:device,
-                                                                   :path,
-                                                                   :datum,
-                                                                   'true')
-                                  ON CONFLICT (device,
-                                               path) DO UPDATE SET datum=:datum", [':device'=>$device,
-                                                                                   ':path'=>"meeting/last_join_result",
-                                                                                   ':datum'=>"failure"] ) ;
+            if( $meeting_status!="in_meeting" ) {
+                echo "didn't reach in_meeting\n" ;
+                sqlite_query( "INSERT INTO data (device,
+                                                   path,
+                                                   datum,
+                                                   no_refresh) VALUES (:device,
+                                                                       :path,
+                                                                       :datum,
+                                                                       'true')
+                                      ON CONFLICT (device,
+                                                   path) DO UPDATE SET datum=:datum", [':device'=>$device,
+                                                                                       ':path'=>"meeting/last_join_result",
+                                                                                       ':datum'=>"failure"] ) ;
+            }
         }
     }
 }

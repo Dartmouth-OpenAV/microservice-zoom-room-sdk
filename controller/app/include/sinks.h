@@ -433,12 +433,9 @@ class AutoIMeetingServiceSink : public IMeetingServiceSink
 
         if( lockStatus.isLocked ) {
             update_state( "meeting/connection_stage", "locked" ) ;
-            update_state( "meeting/connection_stage", "locked" ) ;
         } else if( showPasswordDialog && wrongAndRetry ) {
             update_state( "meeting/connection_stage", "needs_passcode_wrong_and_retry" ) ;
-            update_state( "meeting/connection_stage", "needs_passcode_wrong_and_retry" ) ;
         } else if( showPasswordDialog ) {
-            update_state( "meeting/connection_stage", "needs_passcode" ) ;
             update_state( "meeting/connection_stage", "needs_passcode" ) ;
         } else {
             delete_state( "meeting/connection_stage" ) ;
