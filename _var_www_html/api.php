@@ -58,14 +58,14 @@ function instantiate_process_for_device_if_needed( $device ) {
     $sleep_counter = 0 ;
     while( $sleep_counter<5 &&
            sqlite_query("SELECT datum FROM data WHERE device=:device AND
-                                                       path=:path", [$device,
-                                                                     "paired"], true)!="true" ) {
+                                                       path=:path", [':device'=>$device,
+                                                                     ':path'=>"paired"], true)!="true" ) {
         sleep( 1 ) ;
         $sleep_counter++ ;
     }
     if( sqlite_query("SELECT datum FROM data WHERE device=:device AND
-                                                        path=:path", [$device,
-                                                                      "paired"], true)!="true" ) {
+                                                        path=:path", [':device'=>$device,
+                                                                      ':path'=>"paired"], true)!="true" ) {
         add_error( $device, "unable to pair controller with Zoom" ) ;
         return false ;
     }
@@ -158,7 +158,46 @@ if( is_cli() ) {
                     // maintenance and sleeping a little
                     
                     //   cleaning up obsolete data
-                    sqlite_query( "DELETE FROM data WHERE last_queried_timestamp<DATETIME('now', '-{$refresh_for_how_long} minutes')", [] ) ;
+                    // sqlite_query( "DELETE FROM data WHERE last_queried_timestamp<DATETIME('now', '-{$refresh_for_how_long} minutes')", [] ) ;
+                    $devices_in_db = sqlite_query( "SELECT DISTINCT(device) AS device FROM data", [] ) ;
+                    $devices_to_reap = [] ;
+                    foreach( $devices_in_db as $device_in_db ) {
+                        $recently_queried_count = sqlite_query( "SELECT COUNT(1) FROM data WHERE device=:device AND
+                                                                                                 last_queried_timestamp>=DATETIME('now', '-{$refresh_for_how_long} minutes')", [':device'=>$device_in_db['device']], true ) ;
+                        if( $recently_queried_count==0 ) {
+                            $devices_to_reap[] = $device_in_db['device'] ;
+                        }
+                    }
+                    if( count($devices_to_reap)>0 ) {
+                        echo "> " . date( "Y-m-d H:i:s" ) . " - killing controller processes no longer tied to a device\n" ;
+                        foreach( $devices_to_reap as $device_to_reap ) {
+                            echo "> " . date( "Y-m-d H:i:s" ) . " -   {$device_to_reap}\n" ;
+                            $pid_files = glob( "/dev/shm/*.pid", GLOB_NOSORT ) ;
+                            foreach( $pid_files as $pid_file ) {
+                                $device = substr( $pid_file, 9 ) ;
+                                $device = substr( $device, 0, strlen($device)-4 ) ;
+                                if( $device==$device_to_reap ) {
+                                    $pid = intval( trim(file_get_contents($pid_file)) ) ;
+                                    $ppid = get_parent_pid( $pid ) ;
+                                    echo "> " . date( "Y-m-d H:i:s" ) . " -   killing pid: {$pid} & ppid: {$ppid} for device: {$device}\n" ;
+                                    
+                                    posix_kill( $pid, SIGINT ) ;
+                                    // to release a blocking fgets
+                                    file_put_contents( "/dev/shm/{$device}.fifo", "exit", FILE_APPEND ) ;
+                                    posix_kill( $ppid, SIGTERM ) ;
+                                    usleep( 100000 ) ; // 0.1 second
+                                    @unlink( "/dev/shm/{$device}.pid" ) ;
+                                    @unlink( "/dev/shm/{$device}.fifo" ) ;
+                                    @unlink( "/dev/shm/{$device}.queue" ) ;
+                                    @unlink( "/dev/shm/{$device}.stdout" ) ;
+                                    @unlink( "/dev/shm/{$device}.stderr" ) ;
+                                }
+                            }
+                            echo "> " . date( "Y-m-d H:i:s" ) . " -   purging db for for device: {$device_to_reap}\n" ;
+                            sqlite_query( "DELETE FROM data WHERE device=:device", [':device'=>$device_to_reap] ) ;
+                        }
+                    }
+
                     $obsolete_tasks = sqlite_query( "SELECT * FROM tasks WHERE in_process='true' AND
                                                                                (in_process_since_timestamp<DATETIME('now', '-20 seconds') OR in_process_since_timestamp IS NULL)", [] ) ;
                     if( count($obsolete_tasks)>0 ) {
@@ -191,41 +230,6 @@ if( is_cli() ) {
                     if( mt_rand(0,99)==0 ) {
                         echo "> " . date( "Y-m-d H:i:s" ) . " - removing task log files older than 10 days\n" ;
                         shell_exec( '/usr/bin/find /var/log -name "task.*.log" -type f -mtime +10 -exec rm \{\} \\;' ) ;
-                    }
-
-                    // 1% chance of killing controller app processes no longer tied to a device
-                    if( mt_rand(0,99)==0 ) {
-                        echo "> " . date( "Y-m-d H:i:s" ) . " - killing controller processes no longer tied to a device\n" ;
-                        $devices_in_db = sqlite_query( "SELECT DISTINCT(device) AS device FROM data", [] ) ;
-                        $pid_files = glob( "/dev/shm/*.pid", GLOB_NOSORT ) ;
-                        foreach( $pid_files as $pid_file ) {
-                            $device = substr( $pid_file, 9 ) ;
-                            $device = substr( $device, 0, strlen($device)-4 ) ;
-                            $found = false ;
-                            foreach( $devices_in_db as $device_in_db ) {
-                                if( $device==$device_in_db['device'] ) {
-                                    $found = true ;
-                                    break ;
-                                }
-                            }
-                            if( !$found ) {
-                                $pid = intval( trim(file_get_contents($pid_file)) ) ;
-                                $ppid = get_parent_pid( $pid ) ;
-                                echo "> " . date( "Y-m-d H:i:s" ) . " - killing pid: {$pid} & ppid: {$ppid} for device: {$device}\n" ;
-                                
-                                posix_kill( $pid, SIGINT ) ;
-                                // to release a blocking fgets
-                                file_put_contents( "/dev/shm/{$device}.fifo", "exit", FILE_APPEND ) ;
-                                posix_kill( $ppid, SIGTERM ) ;
-                                usleep( 100000 ) ; // 0.1 second
-                                @unlink( "/dev/shm/{$device}.pid" ) ;
-                                @unlink( "/dev/shm/{$device}.fifo" ) ;
-                                @unlink( "/dev/shm/{$device}.queue" ) ;
-                                @unlink( "/dev/shm/{$device}.stdout" ) ;
-                                @unlink( "/dev/shm/{$device}.stderr" ) ;
-                            }
-                        }
-
                     }
                 }
                 usleep( 100000 ) ; // microseconds
@@ -274,29 +278,29 @@ $path = implode( "/", array_slice($request_uri, 2) ) ;
 $path = explode( "?", $path ) ;
 $path = $path[0] ;
 
-if( $path=="meeting/share/camera" &&
+if( $path=="meeting/presence/sharing/camera" &&
     $method=="GET" ) {
     get() ;
 }
-if( $path=="meeting/share/camera" &&
+if( $path=="meeting/presence/sharing/camera" &&
     $method=="PUT" ) {
     set() ;
 }
 
-if( $path=="meeting/muted" &&
+if( $path=="meeting/presence/microphone_muted" &&
     $method=="GET" ) {
     get() ;
 }
-if( $path=="meeting/muted" &&
+if( $path=="meeting/presence/microphone_muted" &&
     $method=="PUT" ) {
     set() ;
 }
 
-if( $path=="meeting/video_muted" &&
+if( $path=="meeting/presence/video_muted" &&
     $method=="GET" ) {
     get() ;
 }
-if( $path=="meeting/video_muted" &&
+if( $path=="meeting/presence/video_muted" &&
     $method=="PUT" ) {
     set() ;
 }
@@ -345,31 +349,31 @@ function get() {
     global $device, $path, $method ;
 
     $entry_count = sqlite_query( "SELECT COUNT(1) FROM data WHERE device=:device AND
-                                                                  path=:path", [$device,
-                                                                                $path], true ) ;
+                                                                  path=:path", [':device'=>$device,
+                                                                                ':path'=>$path], true ) ;
     if( $entry_count==0 ) {
         sqlite_query( "INSERT INTO data (device,
                                          path,
                                          datum) VALUES (:device,
                                                         :path,
-                                                        null)", [$device,
-                                                                 $path] ) ;
+                                                        null)", [':device'=>$device,
+                                                                 ':path'=>$path] ) ;
         close_with_204() ;
     }
     if( $entry_count>0 ) {
         if( $entry_count>1 ) {
             // found bug with very quick initial queries to same path/device, workaround until better solution
             sqlite_query( "DELETE FROM data WHERE device=:device AND
-                                                  path=:path LIMIT " . ($entry_count-1), [$device,
-                                                                                          $path] ) ;
+                                                  path=:path LIMIT " . ($entry_count-1), [':device'=>$device,
+                                                                                          ':path'=>$path] ) ;
             // add_error( $device, "more than 1 entry count for {$method} {$path} with: {$entry_count}" ) ;
         }
         $datum = sqlite_query( "SELECT datum FROM data WHERE device=:device AND
-                                                             path=:path LIMIT 1", [$device,
-                                                                                   $path], true ) ;
+                                                             path=:path LIMIT 1", [':device'=>$device,
+                                                                                   ':path'=>$path], true ) ;
         sqlite_query( "UPDATE data SET last_queried_timestamp=CURRENT_TIMESTAMP WHERE device=:device AND
-                                                                                      path=:path", [$device,
-                                                                                                    $path] ) ;
+                                                                                      path=:path", [':device'=>$device,
+                                                                                                    ':path'=>$path] ) ;
 
         
 
@@ -388,27 +392,30 @@ function get_hierarchy() {
     global $device, $path, $method ;
 
     $entry_count = sqlite_query( "SELECT COUNT(1) FROM data WHERE device=:device AND
-                                                                  path LIKE :path", [$device,
-                                                                                     "{$path}%"], true ) ;
+                                                                  (path LIKE :path1 OR path=:path2)", [':device'=>$device,
+                                                                                                       ':path1'=>"{$path}/%",
+                                                                                                       ':path2'=>$path], true ) ;
 
     if( $entry_count==0 ) {
+        // add a datum so device gets a process tied to it
         sqlite_query( "INSERT INTO data (device,
                                          path,
                                          datum) VALUES (:device,
                                                         :path,
-                                                        null)", [$device,
-                                                                 $path] ) ;
-
+                                                        null)", [':device'=>$device,
+                                                                 ':path'=>$path] ) ;
         close_with_204() ;
     }
     if( $entry_count>0 ) {
         $data = sqlite_query( "SELECT path,
                                       datum FROM data WHERE device=:device AND
-                                                            path LIKE :path", [$device,
-                                                                                       "{$path}%"] ) ;
+                                                            (path LIKE :path1 OR path=:path2)", [':device'=>$device,
+                                                                                                 ':path1'=>"{$path}/%",
+                                                                                                 ':path2'=>$path] ) ;
         sqlite_query( "UPDATE data SET last_queried_timestamp=CURRENT_TIMESTAMP WHERE device=:device AND
-                                                                                      path LIKE :path", [$device,
-                                                                                                         "{$path}%"] ) ;
+                                                                                      (path LIKE :path1 OR path=:path2)", [':device'=>$device,
+                                                                                                                           ':path1'=>"{$path}/%",
+                                                                                                                           ':path2'=>$path] ) ;
 
         
 
@@ -553,12 +560,13 @@ function set_meeting( $device, $data ) {
         file_put_contents( "/dev/shm/{$device}.fifo", "join_meeting {$data['meeting_id']}\n" ) ;
 
         // do we need to send a passcode?
-        $meeting_status = false ;
+        $meeting_status = null ;
+        $passcode_has_been_sent = false ;
         $safety_counter = 60 ; // sleeps are 0.1s, so that's 6s total
-        while( $meeting_status===false ) {
+        while( $meeting_status!="in_meeting" ) {
             $meeting_status_count = sqlite_query( "SELECT COUNT(1) FROM data WHERE device=:device AND
-                                                                                   path=:path", [$device,
-                                                                                                 "meeting/status"], true ) ;
+                                                                                        path=:path", [':device'=>$device,
+                                                                                                      ':path'=>"meeting/status"], true ) ;
             if( $meeting_status_count==0 ) {
                 $safety_counter-- ;
                 if( $safety_counter<0 ) {
@@ -568,12 +576,20 @@ function set_meeting( $device, $data ) {
                 }
             } else {
                 $meeting_status = sqlite_query( "SELECT datum FROM data WHERE device=:device AND
-                                                                              path=:path", [$device,
-                                                                                            "meeting/status"], true ) ;
-                if( $meeting_status=="connecting" &&
-                    $data['meeting_passcode']!="" ) {
-                    // now is the time to send in the passcode
-                    file_put_contents( "/dev/shm/{$device}.fifo", "send_meeting_passcode {$data['meeting_passcode']}\n" ) ;
+                                                                              path=:path", [':device'=>$device,
+                                                                                            ':path'=>"meeting/status"], true ) ;
+                if( $meeting_status=="connecting" ) {
+                    $connection_stage = sqlite_query( "SELECT datum FROM data WHERE device=:device AND
+                                                                                    path=:path", [':device'=>$device,
+                                                                                                  ':path'=>"meeting/connection_stage"], true ) ;
+                     echo "meeting_connection_stage: {$connection_stage}\n" ;
+                    if( substr_count($connection_stage, "needs_passcode")>0 &&
+                        $data['meeting_passcode']!="" &&
+                        !$passcode_has_been_sent ) {
+                        // now is the time to send in the passcode
+                        file_put_contents( "/dev/shm/{$device}.fifo", "send_meeting_passcode {$data['meeting_passcode']}\n" ) ;
+                        $passcode_has_been_sent = true ;
+                    }
                 } else if( $meeting_status=="in_meeting" ) {
                     // all right!
                     sqlite_query( "INSERT INTO data (device,
@@ -595,7 +611,7 @@ function set_meeting( $device, $data ) {
             echo "meeting_status: {$meeting_status}\n" ;
         }
 
-        if( $meeting_status===false ) {
+        if( $meeting_status!="in_meeting" ) {
             sqlite_query( "INSERT INTO data (device,
                                                path,
                                                datum,

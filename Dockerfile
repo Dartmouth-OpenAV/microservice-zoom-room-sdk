@@ -10,6 +10,16 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install tzdata -y
 ENV TZ=America/New_York
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
+# Web API components
+RUN DEBIAN_FRONTEND=noninteractive apt-get install sqlite3 php-sqlite3 apache2 php php-curl php-xml libapache2-mod-php screen -y
+RUN rm /var/www/html/index.html
+COPY _var_www_html /var/www/html
+RUN chown -Rf www-data:www-data /var/www/html
+RUN find /var/www/html -type f -exec chmod 440 {} \;
+RUN find /var/www/html -type d -exec chmod 550 {} \;
+RUN a2enmod rewrite
+COPY _etc_apache2_sites-available_default.conf /etc/apache2/sites-available/000-default.conf
+
 # OpenAVControllerApp build
 RUN DEBIAN_FRONTEND=noninteractive apt-get install build-essential cmake libuv1-dev libsqlite3-dev nlohmann-json3-dev -y
 COPY controller /controller
@@ -41,18 +51,8 @@ RUN if [ "$MODE" = "production" ]; then \
     fi
 RUN mkdir /data
 
-# Web API components
-RUN DEBIAN_FRONTEND=noninteractive apt-get install sqlite3 php-sqlite3 apache2 php php-curl php-xml libapache2-mod-php screen -y
-RUN rm /var/www/html/index.html
-COPY _var_www_html /var/www/html
-RUN chown -Rf www-data:www-data /var/www/html
-RUN find /var/www/html -type f -exec chmod 440 {} \;
-RUN find /var/www/html -type d -exec chmod 550 {} \;
-RUN a2enmod rewrite
-COPY _etc_apache2_sites-available_default.conf /etc/apache2/sites-available/000-default.conf
-
 # to quiet an assumption made by libZRCSdk.so
-RUN echo '#!/bin/bash' > /usr/bin/lspci
+COPY _usr_bin_lspci /usr/bin/lspci
 RUN chmod 555 /usr/bin/lspci
 
 COPY _fifo_runner.sh /fifo_runner.sh

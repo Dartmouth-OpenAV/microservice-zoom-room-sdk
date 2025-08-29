@@ -13,13 +13,13 @@ public:
 
     virtual std::string OnGetDeviceModel() { return "Linux"; }
 
-    virtual std::string OnGetDeviceSerialNumber() { return ""; }
+    virtual std::string OnGetDeviceSerialNumber() { return "1234"; }
 
-    virtual std::string OnGetDeviceMacAddress() { return ""; }
+    virtual std::string OnGetDeviceMacAddress() { return "12:34:de:ad:be:ef"; }
 
-    virtual std::string OnGetDeviceIP() { return ""; }
+    virtual std::string OnGetDeviceIP() { return "127.0.0.1"; }
 
-    virtual std::string OnGetFirmwareVersion() { return "1.0"; }
+    virtual std::string OnGetFirmwareVersion() { return "1.2"; }
 
     virtual std::string OnGetAppName() { return "OpenAV Zoom Room Controller"; }
 

@@ -344,14 +344,16 @@ class AutoIMeetingServiceSink : public IMeetingServiceSink
         std::cout << "< OnUpdateMeetingStatus: " << meetingStatus << std::endl ;
         if( meetingStatus==MeetingStatusNotInMeeting ) {
             update_state( "meeting/status", "not_in_meeting" ) ;
-            delete_state( "meeting%" ) ;
+            delete_state( "meeting/info%" ) ;
+            delete_state( "meeting/presence%" ) ;
         } else if( meetingStatus==MeetingStatusConnectingToMeeting ) {
             update_state( "meeting/status", "connecting" ) ;
         } else if( meetingStatus==MeetingStatusInMeeting ) {
             update_state( "meeting/status", "in_meeting" ) ;
         } else {
             update_state( "meeting/status", "unknown" ) ;
-            delete_state( "meeting%" ) ;
+            delete_state( "meeting/info%" ) ;
+            delete_state( "meeting/presence%" ) ;
         }
     }
 
@@ -416,12 +418,15 @@ class AutoIMeetingServiceSink : public IMeetingServiceSink
 
         if( lockStatus.isLocked ) {
             update_state( "meeting/connection_stage", "locked" ) ;
+            update_state( "meeting/connection_stage", "locked" ) ;
         } else if( showPasswordDialog && wrongAndRetry ) {
-            update_state( "meeting/connection_stage", "wrong_passcode_retry" ) ;
+            update_state( "meeting/connection_stage", "needs_passcode_wrong_and_retry" ) ;
+            update_state( "meeting/connection_stage", "needs_passcode_wrong_and_retry" ) ;
         } else if( showPasswordDialog ) {
             update_state( "meeting/connection_stage", "needs_passcode" ) ;
+            update_state( "meeting/connection_stage", "needs_passcode" ) ;
         } else {
-            delete_state( "meeting/connection_stage%" ) ;
+            delete_state( "meeting/connection_stage" ) ;
         }
     }
 
@@ -446,9 +451,9 @@ class AutoIMeetingAudioHelperSink : public IMeetingAudioHelperSink
         std::cout << "< OnUpdateMyAudioStatus: " << audioStatus.isMuted << std::endl ;
 
         if( audioStatus.isMuted ) {
-            update_state( "meeting/muted", "true" ) ;
+            update_state( "meeting/presence/microphone_muted", "true" ) ;
         } else {
-            update_state( "meeting/muted", "false" ) ;
+            update_state( "meeting/presence/microphone_muted", "false" ) ;
         }
     }
 
@@ -485,7 +490,7 @@ class AutoIMeetingShareHelperSink : public IMeetingShareHelperSink
     virtual void OnUpdateCameraSharingStatus (const CameraSharingStatus &status) override {
         std::cout << "< OnUpdateCameraSharingStatus: " << status.deviceID << std::endl ;
 
-        update_state( "meeting/share/camera", status.deviceID ) ;
+        update_state( "meeting/presence/sharing/camera", status.deviceID ) ;
     }
 
     virtual void OnSharingSourceNotification (const std::vector< ShareSource > &zrShareSources, const std::vector< ShareSource > &zrwShareSources) override {}
@@ -519,9 +524,9 @@ class AutoIMeetingVideoHelperSink : public IMeetingVideoHelperSink
         std::endl ;
 
         if( videoStatus.sending ) {
-            update_state( "meeting/video_muted", "false" ) ;
+            update_state( "meeting/presence/video_muted", "false" ) ;
         } else {
-            update_state( "meeting/video_muted", "true" ) ;
+            update_state( "meeting/presence/video_muted", "true" ) ;
         }
     }
 

@@ -144,7 +144,7 @@ void OpenAVControllerApp::InitServices()
     IZRCSDK*     sdk = IZRCSDK::GetInstance() ;
     sdk->RegisterSink( sdkSink ) ;
 
-    m_roomService = sdk->CreateZoomRoomsService() ;
+    m_roomService = sdk->CreateZoomRoomsService( "1337" ) ;
     IZoomRoomsServiceSink* pRoomSink = new AutoIZoomRoomsServiceSink() ;
     m_roomService->RegisterSink( pRoomSink ) ;
 
@@ -193,6 +193,8 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
         std::cout << "available commands:" << std::endl ;
         std::cout << "  pair <activation code>" << std::endl ;
         std::cout << "  unpair" << std::endl ;
+        std::cout << "  retry_to_pair" << std::endl ;
+        std::cout << "  can_retry_to_pair_last_room" << std::endl ;
         std::cout << "  get_state" << std::endl ;
         std::cout << "  join_meeting <meeting id>" << std::endl ;
         std::cout << "  send_meeting_passcode <meeting password>" << std::endl ;
@@ -242,6 +244,80 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             update_state( "paired", "false" ) ;
         }
     }
+    else if( api=="retry_to_pair" ) {
+        std::cout << "> retry_to_pair" << std::endl ;
+
+        if( !m_roomService ) {
+            std::cout << ">   error: no room service" ;
+            return ;
+        }
+
+        ZRCSDKError result = m_roomService->RetryToPairRoom() ;
+        if( result!=ZRCSDKERR_SUCCESS ) {
+            std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+        }
+    }
+    else if( api=="can_retry_to_pair_last_room" ) {
+        std::cout << "> can_retry_to_pair_last_room" << std::endl ;
+
+        if( !m_roomService ) {
+            std::cout << ">   error: no room service" ;
+            return ;
+        }
+
+        bool can_retry_to_pair_result ;
+
+        ZRCSDKError result = m_roomService->CanRetryToPairLastRoom( can_retry_to_pair_result ) ;
+        if( result!=ZRCSDKERR_SUCCESS ) {
+            std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+        } else {
+            if( can_retry_to_pair_result ) {
+                std::cout << ">   true" << std::endl ;
+            } else {
+                std::cout << ">   false" << std::endl ;
+            }
+        }
+    }
+    else if( api=="query_all_zoom_room_services" ) {
+         // IZRCSDK*     sdk = IZRCSDK::GetInstance() ;
+         // ZRCSDKError result = sdk->QueryAllZoomRoomsServices() ;
+
+        // if( !m_roomService ) {
+        //     std::cout << ">   error: no room service" ;
+        //     return ;
+        // }
+        std::vector<ZoomRoomInfo> all_zoom_room_infos ;
+        IZRCSDK*     sdk = IZRCSDK::GetInstance() ;
+        ZRCSDKError result = sdk->QueryAllZoomRoomsServices( all_zoom_room_infos ) ;
+        for (ZRCSDK::ZoomRoomInfo zoom_room_info : all_zoom_room_infos) {
+            std::cout << "roomName: " << zoom_room_info.roomName << std::endl ;
+            std::cout << "displayName: " << zoom_room_info.displayName << std::endl ;
+            std::cout << "roomID: " << zoom_room_info.roomID << std::endl ;
+            std::cout << "canRetryToPair: " << zoom_room_info.canRetryToPair << std::endl ;
+            std::cout << std::endl ;
+        }
+    }
+    else if( api=="get_last_zoom_room_info" ) {
+        std::cout << "> get_last_zoom_room_info" << std::endl ;
+
+        if( !m_roomService ) {
+            std::cout << ">   error: no room service" ;
+            return ;
+        }
+
+        ZoomRoomInfo last_zoom_room_info ;
+
+        ZRCSDKError result = m_roomService->GetLastZoomRoomInfo( last_zoom_room_info ) ;
+        if( result!=ZRCSDKERR_SUCCESS ) {
+            std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+        } else {
+            std::cout << "roomName: " << last_zoom_room_info.roomName << std::endl ;
+            std::cout << "displayName: " << last_zoom_room_info.displayName << std::endl ;
+            std::cout << "roomID: " << last_zoom_room_info.roomID << std::endl ;
+            std::cout << "canRetryToPair: " << last_zoom_room_info.canRetryToPair << std::endl ;
+            std::cout << std::endl ;
+        }
+    }
     else if( api=="join_meeting" ) {
         std::string meetingID ;
         iss >> meetingID ;
@@ -256,7 +332,14 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             return ;
         }
 
-        ZRCSDKError result = m_roomService->GetMeetingService()->JoinMeeting( meetingID ) ;
+        std::cout << ">   sending precautionary CancelEnteringMeetingPassword" << std::endl ;
+        ZRCSDKError result = m_roomService->GetMeetingService()->CancelEnteringMeetingPassword() ;
+        // if( result==ZRCSDKERR_SUCCESS ) {
+        //     std::cout << ">     and it looks like it was needed" << std::endl ;
+        //     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+        // }
+
+        result = m_roomService->GetMeetingService()->JoinMeeting( meetingID ) ;
         if( result!=ZRCSDKERR_SUCCESS ) {
             std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
         }
@@ -292,7 +375,13 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             return ;
         }
 
-        ZRCSDKError result = m_roomService->GetMeetingService()->StartInstantMeeting() ;
+        std::cout << ">   sending precautionary CancelEnteringMeetingPassword" << std::endl ;
+        ZRCSDKError result = m_roomService->GetMeetingService()->CancelEnteringMeetingPassword() ;
+        // if( result==ZRCSDKERR_SUCCESS ) {
+        //     std::cout << ">     and it looks like it was needed" << std::endl ;
+        // }
+
+        result = m_roomService->GetMeetingService()->StartInstantMeeting() ;
         if( result!=ZRCSDKERR_SUCCESS ) {
             std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
         }
@@ -313,7 +402,13 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             return ;
         }
 
-        ZRCSDKError result = m_roomService->GetMeetingService()->GetMeetingShareHelper()->LaunchSharingMeeting( false, SharingInstructionDisplayStateWhiteboardCamera ) ;
+        std::cout << ">   sending precautionary CancelEnteringMeetingPassword" << std::endl ;
+        ZRCSDKError result = m_roomService->GetMeetingService()->CancelEnteringMeetingPassword() ;
+        // if( result==ZRCSDKERR_SUCCESS ) {
+        //     std::cout << ">     and it looks like it was needed" << std::endl ;
+        // }
+
+        result = m_roomService->GetMeetingService()->GetMeetingShareHelper()->LaunchSharingMeeting( false, SharingInstructionDisplayStateWhiteboardCamera ) ;
         if( result!=ZRCSDKERR_SUCCESS ) {
             std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
         }
@@ -330,18 +425,14 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             return ;
         }
 
-        if( get_state_datum("meeting/connection_stage")!="" ) {
-            std::cout << ">   it looks like we were waiting for a passcode, cancelling that instead" << std::endl ;
-            ZRCSDKError result = m_roomService->GetMeetingService()->CancelEnteringMeetingPassword() ;
-            if( result!=ZRCSDKERR_SUCCESS ) {
-                std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
-            }
-        } else {
-            ZRCSDKError result = m_roomService->GetMeetingService()->ExitMeeting( ExitMeetingCmdLeave ) ;
-            if( result!=ZRCSDKERR_SUCCESS ) {
-                std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
-            }
+        std::cout << ">   sending CancelEnteringMeetingPassword" << std::endl ;
+        ZRCSDKError result = m_roomService->GetMeetingService()->CancelEnteringMeetingPassword() ;
+
+        result = m_roomService->GetMeetingService()->ExitMeeting( ExitMeetingCmdLeave ) ;
+        if( result!=ZRCSDKERR_SUCCESS ) {
+            std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
         }
+        delete_state( "meeting/connection_stage" ) ;
     }
     else if( api=="end_meeting" ) {
         std::cout << "> end_meeting" << std::endl ;
@@ -355,17 +446,15 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             return ;
         }
 
-        if( get_state_datum("meeting/connection_stage")!="" ) {
-            std::cout << ">   it looks like we were waiting for a passcode, cancelling that instead" << std::endl ;
-            ZRCSDKError result = m_roomService->GetMeetingService()->CancelEnteringMeetingPassword() ;
-            if( result!=ZRCSDKERR_SUCCESS ) {
-                std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
-            }
-        } else {
-            ZRCSDKError result = m_roomService->GetMeetingService()->ExitMeeting( ExitMeetingCmdEnd ) ;
-            if( result!=ZRCSDKERR_SUCCESS ) {
-                std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
-            }
+        std::cout << ">   sending precautionary CancelEnteringMeetingPassword" << std::endl ;
+        ZRCSDKError result = m_roomService->GetMeetingService()->CancelEnteringMeetingPassword() ;
+        // if( result==ZRCSDKERR_SUCCESS ) {
+        //     std::cout << ">     and it looks like it was needed" << std::endl ;
+        // }
+
+        result = m_roomService->GetMeetingService()->ExitMeeting( ExitMeetingCmdEnd ) ;
+        if( result!=ZRCSDKERR_SUCCESS ) {
+            std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
         }
     }
     else if( api=="mute") {
