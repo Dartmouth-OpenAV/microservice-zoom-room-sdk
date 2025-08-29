@@ -21,6 +21,8 @@
 #include "IMeetingAudioHelper.h"
 #include "IMeetingVideoHelper.h"
 #include "IMeetingListHelper.h"
+#include "IParticipantHelper.h"
+
 
 USING_NS_ZRCSDK
 
@@ -500,7 +502,7 @@ class AutoIMeetingShareHelperSink : public IMeetingShareHelperSink
     virtual void OnUpdateAirPlayBlackMagicStatus (const AirplayBlackMagicStatus &status) override {
         std::cout << "< OnUpdateAirPlayBlackMagicStatus " << std::endl ;
 
-        update_state( "sharing_key", status.directPresentationSharingKey ) ;
+        update_state( "sharing_key", "\"" + status.directPresentationSharingKey + "\"" ) ;
         update_state( "pairing_code", status.directPresentationPairingCode ) ;
     }
 
@@ -578,4 +580,45 @@ class AutoIMeetingListHelperSink : public IMeetingListHelperSink
 
     virtual void OnMeetingWillReleaseAutomatically (const MeetingItem &meetingItem) override {}
 
+};
+
+class AutoIParticipantHelperSink : public IParticipantHelperSink
+{
+    // virtual void OnInitMeetingParticipants (const std::vector< MeetingParticipant > &participants, int32_t totalParticipantsCount, bool needCleanUpUserList, ConfSessionType session) override {}
+ 
+    // virtual void OnUserJoin (const std::vector< MeetingParticipant > &participants, ConfSessionType session) override {}
+ 
+    // virtual void OnUserLeave (const std::vector< MeetingParticipant > &participants, ConfSessionType session) override {}
+ 
+    // virtual void OnUserUpdate (const std::vector< MeetingParticipant > &participants, ConfSessionType session) override {}
+ 
+    virtual void OnHostChangedNotification (int32_t hostUserID, bool amIHost) override {}
+ 
+    virtual void OnMeetingParticipantsChanged (ConfSessionType session) override {
+        // std::vector<MeetingParticipant> waiting;
+        // m_roomService->GetMeetingService()->GetParticipantHelper()->GetParticipantsInMeeting(session, waiting);   // session will indicate which list (e.g., waiting room)
+        // // handleWaitingRoomUpdated(session, waiting);
+    }
+ 
+    virtual void OnUpdateHideProfilePictures (bool isHideProfilePictures) override {}
+ 
+    virtual void OnHideFullRoomViewNotification (const std::vector< int32_t > &userIDs) override {}
+ 
+    virtual void OnClaimHostNotification (ClaimHostResult result) override {}
+ 
+    virtual void OnUpdateSharingAnnotationInfo (bool support, bool enable) override {}
+ 
+    virtual void OnAllowAttendeesRenameThemselvesNotification (bool allow) override {}
+ 
+    virtual void OnAllowAttendeesShareWhiteboardsNotification (bool isSupported, bool isAllowed) override {}
+ 
+    virtual void OnAllowRaiseHandForAttendeeNotification (bool canRaiseHandForAttendee) override {}
+ 
+    virtual void OnUpdateOnZRWUserChangeNotification (ZRWUserChangeType type, int32_t zrwUserID) override {}
+ 
+    virtual void OnUpdateHasRemoteControlAdmin (bool isAdminExist) override {}
+ 
+    virtual void OnUpdateHasRemoteControlAssistant (bool isAssistantExist) override {}
+ 
+    virtual void OnDownloadingFinished (const std::string &localFilePath, uint32_t result) override {}
 };

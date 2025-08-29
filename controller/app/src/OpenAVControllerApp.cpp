@@ -137,7 +137,6 @@ std::string redact75(const std::string& input) {
     return result;
 }
 
-
 void OpenAVControllerApp::InitServices()
 {
     IZRCSDKSink* sdkSink = new CZRCSDkSink() ;
@@ -171,6 +170,10 @@ void OpenAVControllerApp::InitServices()
     IMeetingListHelper*     meetingListHelper = meetingService->GetMeetingListHelper() ;
     IMeetingListHelperSink* meetingListHelperSink = new AutoIMeetingListHelperSink() ;
     meetingListHelper->RegisterSink( meetingListHelperSink ) ;
+
+    IParticipantHelper*     participantHelper = meetingService->GetParticipantHelper() ;
+    IParticipantHelperSink* participantHelperSink = new AutoIParticipantHelperSink() ;
+    participantHelper->RegisterSink( participantHelperSink ) ;
 
     createNBStdin() ;
 }
