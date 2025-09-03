@@ -110,8 +110,8 @@ if( is_cli() ) {
             }
             // we update last_refreshed_timestamp no matter what to avoid launching into the next refresh task immediately after
             sqlite_query( "UPDATE data SET last_refreshed_timestamp=CURRENT_TIMESTAMP WHERE device=:device AND
-                                                                                                        path=:path", [':device'=>$task['device'],
-                                                                                                                      ':path'=>$task['path']] ) ;
+                                                                                            path=:path", [':device'=>$task['device'],
+                                                                                                          ':path'=>$task['path']] ) ;
         } else {
             add_error( "all", "didn't find exactly 1 task for task id: {$id}" ) ;
         }
@@ -156,6 +156,18 @@ if( is_cli() ) {
                 if( $maintenance_every_counter==0 ) {
                     $maintenance_every_counter = $maintenance_every ;
                     // maintenance and sleeping a little
+
+                    // cancelling connection_stage of needs_passcode*
+                    $devices_in_needs_passcode_connection_stage = sqlite_query( "SELECT DISTINCT(device) AS device FROM data WHERE path='meeting/connection_stage' AND
+                                                                                                                                   datum LIKE 'needs_passcode%' AND
+                                                                                                                                   last_refreshed_timestamp<DATETIME('now', '-5 minutes')", [] ) ;
+                    foreach( $devices_in_needs_passcode_connection_stage as $device_in_needs_passcode_connection_stage ) {
+                        echo "> " . date( "Y-m-d H:i:s" ) . " - device: {$device_in_needs_passcode_connection_stage['device']} has been waiting for passcode for more than 5 minutes, cancelling\n" ;
+                        file_put_contents( "/dev/shm/{$device_in_needs_passcode_connection_stage['device']}.fifo", "cancel_entering_meeting_password\n" ) ;
+                        sqlite_query( "UPDATE data SET last_refreshed_timestamp=CURRENT_TIMESTAMP WHERE device=:device AND
+                                                                                                        path=:path", [':device'=>$device_in_needs_passcode_connection_stage['device'],
+                                                                                                                      ':path'=>'meeting/connection_stage'] ) ;
+                    }
                     
                     //   cleaning up obsolete data
                     // sqlite_query( "DELETE FROM data WHERE last_queried_timestamp<DATETIME('now', '-{$refresh_for_how_long} minutes')", [] ) ;
@@ -335,7 +347,7 @@ if( $path=="sharing_key" &&
     $method=="GET" ) {
     get() ;
 }
-if( $path=="pairing_code" &&
+if( $path=="sharing_code" &&
     $method=="GET" ) {
     get() ;
 }
