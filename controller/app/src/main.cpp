@@ -4,6 +4,9 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
+#include <chrono>
+#include <thread>
+#include <sqlite3.h>
 
 #if defined(__linux) || defined(__linux__) || defined(linux)
 #include "uv.h"
@@ -36,7 +39,7 @@ void heartBeat(uv_timer_t *handle)
 }
 #endif
 
-std::string device = "unknown" ;
+std::string global_device = "unknown" ;
 
 uv_timer_t clientReqTimer;
 uv_timer_t heartBeatTimer;
@@ -53,12 +56,57 @@ void handle_sigint( int signum ) {
             std::cout << "handle still open: " << uv_handle_type_name(handle->type) << std::endl;
         }
     }, nullptr);
-    std::ofstream file("/dev/shm/" + device + ".fifo", std::ios::app);  // open in append mode
+    std::ofstream file("/dev/shm/" + global_device + ".fifo", std::ios::app);  // open in append mode
     if (file.is_open()) {
         file << "exit\n";
         file.close();
     }
     // std::exit( 0 ) ;
+}
+
+
+// ChatGPT
+std::string get_state_datum( const std::string& path) {
+    sqlite3* db = nullptr ;
+    int rc = sqlite3_open( "/dev/shm/microservice.db", &db ) ;
+    if( rc!=SQLITE_OK &&
+        rc!=SQLITE_DONE &&
+        rc!=SQLITE_ROW ) {
+        std::cerr << "SQLite error (open): " << sqlite3_errmsg( db ) << std::endl ;
+        sqlite3_close( db ) ;
+    }
+
+    const char* select_sql =
+        "SELECT datum FROM data WHERE device=:device AND"
+        "                             path=:path LIMIT 1" ;
+    sqlite3_stmt* select = nullptr ;
+    rc = sqlite3_prepare_v2( db, select_sql, -1, &select, nullptr ) ;
+    if( rc!=SQLITE_OK &&
+        rc!=SQLITE_DONE &&
+        rc!=SQLITE_ROW ) {
+        std::cerr << "SQLite error (select prepare): " << sqlite3_errmsg( db ) << std::endl ;
+        sqlite3_close( db ) ;
+    }
+
+    sqlite3_bind_text( select, sqlite3_bind_parameter_index(select, ":device"), global_device.c_str(), -1, SQLITE_TRANSIENT ) ;
+    sqlite3_bind_text( select, sqlite3_bind_parameter_index(select, ":path"), path.c_str(), -1, SQLITE_TRANSIENT ) ;
+
+    std::string to_return = "" ;
+    rc = sqlite3_step( select ) ;
+    if( rc==SQLITE_ROW ) {
+        std::string datum = reinterpret_cast<const char*>( sqlite3_column_text(select, 0) ) ;
+        to_return = datum ;
+    }
+    if( rc!=SQLITE_OK &&
+        rc!=SQLITE_DONE &&
+        rc!=SQLITE_ROW ) {
+        std::cerr << "SQLite error (select loop done): " << sqlite3_errmsg( db ) << std::endl ;
+        sqlite3_close( db ) ;
+    }
+    sqlite3_finalize(select);
+    sqlite3_close( db ) ;
+
+    return to_return ;
 }
     
 
@@ -67,18 +115,18 @@ int main(int argc, char *argv[])
     std::signal( SIGINT, handle_sigint ) ;
 
     if( argc>1 ) {
-        device = argv[1] ;
+        global_device = argv[1] ;
     }
 
     pid_t pid = getpid() ;
-    std::ofstream out( "/dev/shm/" + device + ".pid" ) ;
+    std::ofstream out( "/dev/shm/" + global_device + ".pid" ) ;
     if( out.is_open() ) {
         out << pid ;
         out.close() ;
     }
 
     std::cout << "> starting" << std::endl ;
-    app.AppInit( device ) ;
+    app.AppInit( global_device ) ;
 
     std::cout << "                    ___                      ___     __                    " << std::endl ;
     std::cout << "                   / _ \\ _ __   ___ _ __    / \\ \\   / /                    " << std::endl ;
@@ -93,20 +141,43 @@ int main(int argc, char *argv[])
                                                                                
     std::cout << "" << std::endl ;
     std::cout << "" << std::endl ;
-    if( device!="unknown" ) {
-        std::string device_activation_code = "" ;
-        auto colon = device.find( ":" ) ;
-        if( colon!=std::string::npos ) {
-            auto at = device.find( "@", colon + 1 ) ;
-            if( !(at==std::string::npos || at==colon + 1) ) {
-                device_activation_code = device.substr( colon + 1, at - (colon + 1) ) ;
-            }
+    if( global_device!="unknown" ) {
+        std::thread( []{ // background work
 
-        }
-        if( device_activation_code!="" ) {
-            std::cout << "> pairing with activation code gotten as parameter" << std::endl ;
-            app.ReceiveCommand( "pair " + device_activation_code ) ;
-        }
+            std::cout << "> trying to re-pair" << std::endl ;
+            bool retry_to_pair_result = false ;
+            app.ReceiveCommand( "retry_to_pair" ) ;
+            for( int i=0 ; i<50 ; i++ ) {
+                std::cout << "." ;
+                std::this_thread::sleep_for( std::chrono::milliseconds(100) ) ;
+                std::string datum = get_state_datum( "paired" ) ;
+                if( datum!="" ) {
+                    if( datum=="true" ) {
+                        retry_to_pair_result = true ;
+                    }
+                    break ;
+                }
+            }
+            std::cout << std::endl ;
+            if( retry_to_pair_result ) {
+                std::cout << ">   success" << std::endl ;
+            } else {
+                std::cout << ">   no go" << std::endl ;
+                std::string device_activation_code = "" ;
+                auto colon = global_device.find( ":" ) ;
+                if( colon!=std::string::npos ) {
+                    auto at = global_device.find( "@", colon + 1 ) ;
+                    if( !(at==std::string::npos || at==colon + 1) ) {
+                        device_activation_code = global_device.substr( colon + 1, at - (colon + 1) ) ;
+                    }
+
+                }
+                if( device_activation_code!="" ) {
+                    std::cout << ">     pairing with activation code gotten as parameter" << std::endl ;
+                    app.ReceiveCommand( "pair " + device_activation_code ) ;
+                }
+            }
+        } ).detach() ;    
     }
     std::cout << "interactive mode, type \"help\" for available commands" << std::endl ;
                                                                             

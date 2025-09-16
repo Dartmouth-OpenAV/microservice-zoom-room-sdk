@@ -25,6 +25,7 @@
 
 
 USING_NS_ZRCSDK
+extern IZoomRoomsService* m_roomService ;
 
 using json = nlohmann::json ;
 
@@ -147,7 +148,7 @@ std::string get_state( bool as_json=true ) {
     rc = sqlite3_prepare_v2( db, select_sql, -1, &select, nullptr ) ;
     check( rc, db, "select prepare" ) ;
 
-    sqlite3_bind_text( select, sqlite3_bind_parameter_index(select, ":device"), device.c_str(), -1, SQLITE_TRANSIENT ) ;
+    sqlite3_bind_text( select, sqlite3_bind_parameter_index(select, ":device"), global_device.c_str(), -1, SQLITE_TRANSIENT ) ;
 
     std::string to_return = "" ;
     while( (rc = sqlite3_step(select))==SQLITE_ROW ) {
@@ -165,36 +166,6 @@ std::string get_state( bool as_json=true ) {
 
     return to_return ;
 }
-
-
-std::string get_state_datum( const std::string& path ) {
-    sqlite3* db = nullptr ;
-    int rc = sqlite3_open( "/dev/shm/microservice.db", &db ) ;
-    check( rc, db, "open" ) ;
-
-    const char* select_sql =
-        "SELECT datum FROM data WHERE device=:device AND"
-        "                             path=:path LIMIT 1" ;
-    sqlite3_stmt* select = nullptr ;
-    rc = sqlite3_prepare_v2( db, select_sql, -1, &select, nullptr ) ;
-    check( rc, db, "select prepare" ) ;
-
-    sqlite3_bind_text( select, sqlite3_bind_parameter_index(select, ":device"), device.c_str(), -1, SQLITE_TRANSIENT ) ;
-    sqlite3_bind_text( select, sqlite3_bind_parameter_index(select, ":path"), path.c_str(), -1, SQLITE_TRANSIENT ) ;
-
-    std::string to_return = "" ;
-    rc = sqlite3_step( select ) ;
-    if( rc==SQLITE_ROW ) {
-        std::string datum = reinterpret_cast<const char*>( sqlite3_column_text(select, 0) ) ;
-        to_return = datum ;
-    }
-    check(rc, db, "select loop done");
-    sqlite3_finalize(select);
-    sqlite3_close( db ) ;
-
-    return to_return ;
-}
-
 
 
 void update_state( const std::string& path, const std::string& datum ) {
@@ -221,7 +192,7 @@ void update_state( const std::string& path, const std::string& datum ) {
     rc = sqlite3_prepare_v2( db, insert_or_update_sql, -1, &insert_or_update, nullptr ) ;
     check( rc, db, "insert or update prepare" ) ;
 
-    sqlite3_bind_text( insert_or_update, sqlite3_bind_parameter_index(insert_or_update, ":device"), device.c_str(), -1, SQLITE_TRANSIENT ) ;
+    sqlite3_bind_text( insert_or_update, sqlite3_bind_parameter_index(insert_or_update, ":device"), global_device.c_str(), -1, SQLITE_TRANSIENT ) ;
     sqlite3_bind_text( insert_or_update, sqlite3_bind_parameter_index(insert_or_update, ":path"), path.c_str(), -1, SQLITE_TRANSIENT ) ;
     sqlite3_bind_text( insert_or_update, sqlite3_bind_parameter_index(insert_or_update, ":datum"), datum.c_str(), -1, SQLITE_TRANSIENT ) ;
 
@@ -582,6 +553,7 @@ class AutoIMeetingListHelperSink : public IMeetingListHelperSink
 
 };
 
+
 class AutoIParticipantHelperSink : public IParticipantHelperSink
 {
     // virtual void OnInitMeetingParticipants (const std::vector< MeetingParticipant > &participants, int32_t totalParticipantsCount, bool needCleanUpUserList, ConfSessionType session) override {}
@@ -595,9 +567,19 @@ class AutoIParticipantHelperSink : public IParticipantHelperSink
     virtual void OnHostChangedNotification (int32_t hostUserID, bool amIHost) override {}
  
     virtual void OnMeetingParticipantsChanged (ConfSessionType session) override {
-        // std::vector<MeetingParticipant> waiting;
-        // m_roomService->GetMeetingService()->GetParticipantHelper()->GetParticipantsInMeeting(session, waiting);   // session will indicate which list (e.g., waiting room)
+        std::cout << "< OnMeetingParticipantsChanged" << std::endl ;
+
+        std::vector<MeetingParticipant> waiting;
+        m_roomService->GetMeetingService()->GetParticipantHelper()->GetParticipantsInMeeting(waiting, session);
+        for (ZRCSDK::MeetingParticipant meeting_participant : waiting) {
+            std::cout << meeting_participant.userName << std::endl ;
+        }
+        // this works, but it seems problematic to create a new zoomroomsservice for this every time
+        // IZRCSDK::GetInstance()->CreateZoomRoomsService( "1337" )->GetMeetingService()->GetParticipantHelper()->GetParticipantsInMeeting(waiting, session );   // session will indicate which list (e.g., waiting room)
         // // handleWaitingRoomUpdated(session, waiting);
+        // for (ZRCSDK::MeetingParticipant meeting_participant : waiting) {
+        //     count << meeting_participant.userName << std::endl ;
+        // }
     }
  
     virtual void OnUpdateHideProfilePictures (bool isHideProfilePictures) override {}
@@ -621,4 +603,5 @@ class AutoIParticipantHelperSink : public IParticipantHelperSink
     virtual void OnUpdateHasRemoteControlAssistant (bool isAssistantExist) override {}
  
     virtual void OnDownloadingFinished (const std::string &localFilePath, uint32_t result) override {}
+
 };

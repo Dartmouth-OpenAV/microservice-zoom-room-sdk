@@ -1,9 +1,10 @@
 #include "OpenAVControllerApp.h"
 #include "ZRCSDKSink.h"
-extern std::string device ;
+extern std::string global_device ;
 #include "sinks.h"
 
 USING_NS_ZRCSDK
+IZoomRoomsService* m_roomService;
 
 #include <iostream>
 #include <string>
@@ -137,6 +138,7 @@ std::string redact75(const std::string& input) {
     return result;
 }
 
+
 void OpenAVControllerApp::InitServices()
 {
     IZRCSDKSink* sdkSink = new CZRCSDkSink() ;
@@ -180,7 +182,7 @@ void OpenAVControllerApp::InitServices()
 
 void OpenAVControllerApp::AppInit( std::string device )
 {
-    device = device ;
+    global_device = device ;
     InitServices() ;
 }
 
@@ -202,6 +204,7 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
         std::cout << "  unpair" << std::endl ;
         std::cout << "  retry_to_pair" << std::endl ;
         std::cout << "  can_retry_to_pair_last_room" << std::endl ;
+        std::cout << "  query_all_zoom_room_services" << std::endl ;
         std::cout << "  get_state" << std::endl ;
         std::cout << "  join_meeting <meeting id>" << std::endl ;
         std::cout << "  send_meeting_passcode <meeting password>" << std::endl ;
@@ -286,13 +289,6 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
         }
     }
     else if( api=="query_all_zoom_room_services" ) {
-         // IZRCSDK*     sdk = IZRCSDK::GetInstance() ;
-         // ZRCSDKError result = sdk->QueryAllZoomRoomsServices() ;
-
-        // if( !m_roomService ) {
-        //     std::cout << ">   error: no room service" ;
-        //     return ;
-        // }
         std::vector<ZoomRoomInfo> all_zoom_room_infos ;
         IZRCSDK*     sdk = IZRCSDK::GetInstance() ;
         ZRCSDKError result = sdk->QueryAllZoomRoomsServices( all_zoom_room_infos ) ;
@@ -301,27 +297,6 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             std::cout << "displayName: " << zoom_room_info.displayName << std::endl ;
             std::cout << "roomID: " << zoom_room_info.roomID << std::endl ;
             std::cout << "canRetryToPair: " << zoom_room_info.canRetryToPair << std::endl ;
-            std::cout << std::endl ;
-        }
-    }
-    else if( api=="get_last_zoom_room_info" ) {
-        std::cout << "> get_last_zoom_room_info" << std::endl ;
-
-        if( !m_roomService ) {
-            std::cout << ">   error: no room service" ;
-            return ;
-        }
-
-        ZoomRoomInfo last_zoom_room_info ;
-
-        ZRCSDKError result = m_roomService->GetLastZoomRoomInfo( last_zoom_room_info ) ;
-        if( result!=ZRCSDKERR_SUCCESS ) {
-            std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
-        } else {
-            std::cout << "roomName: " << last_zoom_room_info.roomName << std::endl ;
-            std::cout << "displayName: " << last_zoom_room_info.displayName << std::endl ;
-            std::cout << "roomID: " << last_zoom_room_info.roomID << std::endl ;
-            std::cout << "canRetryToPair: " << last_zoom_room_info.canRetryToPair << std::endl ;
             std::cout << std::endl ;
         }
     }

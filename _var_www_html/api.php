@@ -64,8 +64,8 @@ function instantiate_process_for_device_if_needed( $device ) {
         $sleep_counter++ ;
     }
     if( sqlite_query("SELECT datum FROM data WHERE device=:device AND
-                                                        path=:path", [':device'=>$device,
-                                                                      ':path'=>"paired"], true)!="true" ) {
+                                                   path=:path", [':device'=>$device,
+                                                                 ':path'=>"paired"], true)!="true" ) {
         add_error( $device, "unable to pair controller with Zoom" ) ;
         return false ;
     }
@@ -286,6 +286,42 @@ $method = $_SERVER['REQUEST_METHOD'] ;
 $request_uri = $_SERVER['REQUEST_URI'] ;
 $request_uri = explode( "/", $request_uri ) ;
 $device = $request_uri[1] ;
+$activation_code_holder = substr( explode("@", $device )[0], 1 ) ;
+if( !preg_match('/^\d+-\d+-\d+\d+$/', $activation_code_holder) &&
+    str_starts_with(base64_decode($activation_code_holder), "http") ) {
+    $ch = curl_init() ;
+    $url = base64_decode( $activation_code_holder ) ;
+    $activation_code = null ;
+    $activation_code_filename = "/dev/shm/activation_code_" . md5( $url ) ;
+    if( file_exists($activation_code_filename) ) {
+        $activation_code = file_get_contents( $activation_code_filename ) ;
+    } else {
+        curl_setopt( $ch, CURLOPT_URL, $url ) ;
+        curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false ) ;
+        curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, "GET" ) ;
+        curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 1 ) ;
+        curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true ) ;
+        curl_setopt( $ch, CURLOPT_TIMEOUT, 2 ) ;
+        $response = curl_exec( $ch ) ;
+        $response_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE ) ;
+        $curl_errno = curl_errno( $ch ) ;
+        curl_close( $ch ) ;
+        if( $response_code==200 ) {
+            if( $response[0]=='"' && $response[strlen($response)-1]=='"' ) {
+                $response = json_decode( $response ) ;
+            }
+            $activation_code = $response ;
+        }
+    }
+    if( $activation_code===null ) {
+        close_with_400( "unable to retrieve activation code" ) ;
+        exit( 1 ) ;
+    }
+
+    // we're good!
+    file_put_contents( $activation_code_filename, $activation_code ) ;
+    $device = ":{$activation_code}@" . explode( "@", $device )[1] ;
+}
 $path = implode( "/", array_slice($request_uri, 2) ) ;
 $path = explode( "?", $path ) ;
 $path = $path[0] ;

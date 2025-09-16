@@ -10,3 +10,5 @@ jobs:
       contents: read
       packages: write
     uses: Dartmouth-OpenAV/shared-workflows/.github/workflows/build_latest.yaml@main
+    with:
+      extra-labels: --label "CONTAINER_LAUNCH_EXTRA_PARAMETERS=-v /data_openav_microservice-zoom-room-sdk/data:/data -v /data_openav_microservice-zoom-room-sdk/root:/root"

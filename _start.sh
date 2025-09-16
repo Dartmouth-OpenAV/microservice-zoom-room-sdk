@@ -40,6 +40,8 @@ CREATE INDEX idx_errors_device ON errors(device);
 
 EOF
 
+mkdir -p /root/.zoom/logs
+
 chmod 660 /dev/shm/microservice.db
 chown root:www-data /dev/shm/microservice.db
 
