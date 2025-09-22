@@ -695,12 +695,12 @@ function unset_meeting( $device, $data ) {
     file_put_contents( "/dev/shm/{$device}.fifo", "leave_meeting\n" ) ;
 }
 
-function get_meeting_share_camera( $device ) {
+function get_meeting_presence_sharing_camera( $device ) {
     // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
     return null ;
 }
 
-function set_meeting_share_camera( $device, $data ) {
+function set_meeting_presence_sharing_camera( $device, $data ) {
     file_put_contents( "/dev/shm/{$device}.fifo", "share_camera {$data}\n" ) ;
 }
 
