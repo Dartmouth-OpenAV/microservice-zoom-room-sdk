@@ -237,6 +237,30 @@ if( is_cli() ) {
                                                                                         ':path'=>$datum['path']] ) ;
                         }
                     }
+
+                    // 1% chance of gathering errors from *.stderr
+                    if( mt_rand(0,99)==0 ) {
+                        echo "> " . date( "Y-m-d H:i:s" ) . " - gathering errors from *.stderr\n" ;
+                        $stderr_files = glob( "/dev/shm/*.stderr" ) ;
+                        clearstatcache() ;
+                        foreach( $stderr_files as $stderr_file ) {
+                            echo "> " . date( "Y-m-d H:i:s" ) . " -   {$stderr_file}: " ;
+                            if( filesize($stderr_file)>0 ) {
+                                echo "has errors\n" ;
+                                $device = str_replace( "/dev/shm/", "", $stderr_file ) ;
+                                $device = str_replace( ".stderr", "", $device ) ;
+                                add_error( $device, "stderr content: " . file_get_contents($stderr_file) ) ;
+                                $fp = fopen( $stderr_file, "r+" ) ;
+                                if( $fp ) {
+                                    ftruncate( $fp, 0 ) ; // truncate to 0 bytes
+                                    fclose( $fp ) ;
+                                }
+                            } else {
+                                echo "ok\n" ;
+                            }
+                        }
+                        shell_exec( '/usr/bin/find /var/log -name "task.*.log" -type f -mtime +10 -exec rm \{\} \\;' ) ;
+                    }
                     
                     // 1% chance of removing task log files older than 10 days
                     if( mt_rand(0,99)==0 ) {
