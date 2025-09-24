@@ -79,7 +79,7 @@
 			"response": []
 		},
 		{
-			"name": "Get Meeting Info",
+			"name": "Get Meeting",
 			"request": {
 				"method": "GET",
 				"header": [
@@ -110,12 +110,12 @@
 			"response": []
 		},
 		{
-			"name": "Get Mute",
+			"name": "Get Meeting Presence Microphone Muted",
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting/muted",
+					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting/presence/microphone_muted",
 					"protocol": "http",
 					"host": [
 						"{{microservice_fqdn}}"
@@ -124,7 +124,8 @@
 					"path": [
 						":{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
 						"meeting",
-						"muted"
+						"presence",
+						"microphone_muted"
 					],
 					"variable": [
 						{
@@ -163,7 +164,7 @@
 			"response": []
 		},
 		{
-			"name": "Set Mute",
+			"name": "Get Meeting Presence Microphone Muted",
 			"request": {
 				"method": "PUT",
 				"header": [
@@ -174,7 +175,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "true",
+					"raw": "false",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -182,7 +183,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting/muted",
+					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting/presence/microphone_muted",
 					"protocol": "http",
 					"host": [
 						"{{microservice_fqdn}}"
@@ -191,7 +192,8 @@
 					"path": [
 						":{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
 						"meeting",
-						"muted"
+						"presence",
+						"microphone_muted"
 					],
 					"variable": [
 						{
@@ -204,12 +206,26 @@
 			"response": []
 		},
 		{
-			"name": "Get Video Mute",
+			"name": "Set Meeting Presence Sharing Camera",
 			"request": {
-				"method": "GET",
-				"header": [],
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "\"\\\\\\\\?\\\\root#media#0001#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\\\\vidsource0\"",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
-					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting/video_muted",
+					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting/presence/sharing/camera",
 					"protocol": "http",
 					"host": [
 						"{{microservice_fqdn}}"
@@ -218,6 +234,36 @@
 					"path": [
 						":{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
 						"meeting",
+						"presence",
+						"sharing",
+						"camera"
+					],
+					"variable": [
+						{
+							"key": "{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Meeting Presence Video Muted",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting/presence/video_muted",
+					"protocol": "http",
+					"host": [
+						"{{microservice_fqdn}}"
+					],
+					"port": "{{microservice_port}}",
+					"path": [
+						":{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
+						"meeting",
+						"presence",
 						"video_muted"
 					],
 					"variable": [
@@ -231,7 +277,7 @@
 			"response": []
 		},
 		{
-			"name": "Set Video Mute",
+			"name": "Set Meeting Presence Video Muted",
 			"request": {
 				"method": "PUT",
 				"header": [
@@ -250,7 +296,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting/video_muted",
+					"raw": "http://{{microservice_fqdn}}:{{microservice_port}}/:{{zoom_room_activation_code}}@{{zoom_room_fqdn}}/meeting/presence/video_muted",
 					"protocol": "http",
 					"host": [
 						"{{microservice_fqdn}}"
@@ -259,6 +305,7 @@
 					"path": [
 						":{{zoom_room_activation_code}}@{{zoom_room_fqdn}}",
 						"meeting",
+						"presence",
 						"video_muted"
 					],
 					"variable": [
