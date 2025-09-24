@@ -725,6 +725,20 @@ function get_meeting_presence_sharing_camera( $device ) {
 }
 
 function set_meeting_presence_sharing_camera( $device, $data ) {
+    $in_meeting = sqlite_query( "SELECT datum FROM data WHERE device=:device AND
+                                                              path=:path", [':device'=>$device,
+                                                                            ':path'=>"meeting"], true ) ;
+    if( $in_meeting===null ) {
+        file_put_contents( "/dev/shm/{$device}.fifo", "start_sharing_meeting\n" ) ;
+        $sleep_counter = 0 ;
+        while( $sleep_counter<5 &&
+               sqlite_query("SELECT datum FROM data WHERE device=:device AND
+                                                           path=:path", [':device'=>$device,
+                                                                         ':path'=>"meeting"], true)===null ) {
+            sleep( 1 ) ;
+            $sleep_counter++ ;
+        }
+    }
     file_put_contents( "/dev/shm/{$device}.fifo", "share_camera {$data}\n" ) ;
 }
 
