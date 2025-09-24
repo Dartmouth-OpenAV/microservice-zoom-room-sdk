@@ -139,14 +139,14 @@ std::string get_state( bool as_json=true ) {
 
     sqlite3* db = nullptr ;
     int rc = sqlite3_open( "/dev/shm/microservice.db", &db ) ;
-    check( rc, db, "open (get_state)" ) ;
+    check( rc, db, "open" ) ;
 
     const char* select_sql =
         "SELECT path,"
         "       datum FROM data WHERE device=:device" ;
     sqlite3_stmt* select = nullptr ;
     rc = sqlite3_prepare_v2( db, select_sql, -1, &select, nullptr ) ;
-    check( rc, db, "select prepare (get_state)" ) ;
+    check( rc, db, "select prepare" ) ;
 
     sqlite3_bind_text( select, sqlite3_bind_parameter_index(select, ":device"), global_device.c_str(), -1, SQLITE_TRANSIENT ) ;
 
@@ -156,7 +156,7 @@ std::string get_state( bool as_json=true ) {
         std::string datum = reinterpret_cast<const char*>( sqlite3_column_text(select, 1) ) ;
         to_return += path + ": " + datum + "\n" ;
     }
-    check(rc, db, "select loop done (get_state)");
+    check(rc, db, "select loop done");
     sqlite3_finalize(select);
     sqlite3_close( db ) ;
 
@@ -173,7 +173,7 @@ void update_state( const std::string& path, const std::string& datum ) {
 
     sqlite3* db = nullptr ;
     int rc = sqlite3_open( "/dev/shm/microservice.db", &db ) ;
-    check( rc, db, "open (update_state)" ) ;
+    check( rc, db, "open" ) ;
 
     const char* insert_or_update_sql =
         "INSERT INTO data (device,"
@@ -190,14 +190,14 @@ void update_state( const std::string& path, const std::string& datum ) {
         "                                 last_refreshed_timestamp=CURRENT_TIMESTAMP;" ;
     sqlite3_stmt* insert_or_update = nullptr ;
     rc = sqlite3_prepare_v2( db, insert_or_update_sql, -1, &insert_or_update, nullptr ) ;
-    check( rc, db, "insert or update prepare (update_state)" ) ;
+    check( rc, db, "insert or update prepare" ) ;
 
     sqlite3_bind_text( insert_or_update, sqlite3_bind_parameter_index(insert_or_update, ":device"), global_device.c_str(), -1, SQLITE_TRANSIENT ) ;
     sqlite3_bind_text( insert_or_update, sqlite3_bind_parameter_index(insert_or_update, ":path"), path.c_str(), -1, SQLITE_TRANSIENT ) ;
     sqlite3_bind_text( insert_or_update, sqlite3_bind_parameter_index(insert_or_update, ":datum"), datum.c_str(), -1, SQLITE_TRANSIENT ) ;
 
     rc = sqlite3_step( insert_or_update ) ;
-    check( rc, db, "insert or update execute (update_state)" ) ;
+    check( rc, db, "insert or update execute" ) ;
     sqlite3_finalize( insert_or_update ) ;
     sqlite3_close( db ) ;
 }
@@ -208,18 +208,18 @@ void delete_state( const std::string& path ) {
 
     sqlite3* db = nullptr ;
     int rc = sqlite3_open( "/dev/shm/microservice.db", &db ) ;
-    check( rc, db, "open (delete_state)" ) ;
+    check( rc, db, "open" ) ;
 
     const char* delete_sql =
         "DELETE FROM data WHERE path LIKE :path" ;
     sqlite3_stmt* delete_ = nullptr ;
     rc = sqlite3_prepare_v2( db, delete_sql, -1, &delete_, nullptr ) ;
-    check( rc, db, "delete prepare (delete_state)" ) ;
+    check( rc, db, "delete prepare" ) ;
 
     sqlite3_bind_text( delete_, sqlite3_bind_parameter_index(delete_, ":path"), path.c_str(), -1, SQLITE_TRANSIENT ) ;
 
     rc = sqlite3_step( delete_ ) ;
-    check( rc, db, "delete execute (delete_state)" ) ;
+    check( rc, db, "delete execute" ) ;
     sqlite3_finalize( delete_ ) ;
     sqlite3_close( db ) ;
 }
