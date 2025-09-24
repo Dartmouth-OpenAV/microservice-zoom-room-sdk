@@ -729,7 +729,7 @@ function set_meeting_presence_sharing_camera( $device, $data ) {
                                                               path=:path", [':device'=>$device,
                                                                             ':path'=>"meeting"], true ) ;
     if( $in_meeting===null ) {
-        file_put_contents( "/dev/shm/{$device}.fifo", "start_sharing_meeting\n" ) ;
+        file_put_contents( "/dev/shm/{$device}.fifo", "start_instant_meeting\n" ) ;
         $sleep_counter = 0 ;
         while( $sleep_counter<5 &&
                sqlite_query("SELECT datum FROM data WHERE device=:device AND
