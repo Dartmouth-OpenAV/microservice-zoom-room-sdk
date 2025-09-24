@@ -72,7 +72,7 @@ std::string get_state_datum( const std::string& path) {
     if( rc!=SQLITE_OK &&
         rc!=SQLITE_DONE &&
         rc!=SQLITE_ROW ) {
-        std::cerr << "SQLite error (open): " << sqlite3_errmsg( db ) << std::endl ;
+        std::cerr << "SQLite error (open): " << sqlite3_errmsg( db ) << ", on path: " << path << std::endl ;
         sqlite3_close( db ) ;
     }
 
@@ -84,7 +84,7 @@ std::string get_state_datum( const std::string& path) {
     if( rc!=SQLITE_OK &&
         rc!=SQLITE_DONE &&
         rc!=SQLITE_ROW ) {
-        std::cerr << "SQLite error (select prepare): " << sqlite3_errmsg( db ) << std::endl ;
+        std::cerr << "SQLite error (select prepare): " << sqlite3_errmsg( db ) << ", on path: " << path << std::endl ;
         sqlite3_close( db ) ;
     }
 
@@ -100,7 +100,7 @@ std::string get_state_datum( const std::string& path) {
     if( rc!=SQLITE_OK &&
         rc!=SQLITE_DONE &&
         rc!=SQLITE_ROW ) {
-        std::cerr << "SQLite error (select loop done): " << sqlite3_errmsg( db ) << std::endl ;
+        std::cerr << "SQLite error (select loop done): " << sqlite3_errmsg( db ) << ", on path: " << path << std::endl ;
         sqlite3_close( db ) ;
     }
     sqlite3_finalize(select);

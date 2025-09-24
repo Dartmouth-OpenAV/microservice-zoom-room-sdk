@@ -571,6 +571,27 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             return ;
         }
 
+        std::string current_meeting = get_state( "meeting" ) ;
+        if( current_meeting=="" ) {
+            std::cout << ">   starting sharing meeting first" << std::endl ;
+            ZRCSDKError result = m_roomService->GetMeetingService()->GetMeetingShareHelper()->LaunchSharingMeeting( false, SharingInstructionDisplayStateWhiteboardCamera ) ;
+            if( result!=ZRCSDKERR_SUCCESS ) {
+                std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+            }
+            for( int i=0 ; i<50 ; i++ ) {
+                std::cout << "." ;
+                std::this_thread::sleep_for( std::chrono::milliseconds(100) ) ;
+                current_meeting = get_state( "meeting" ) ;
+                if( current_meeting!="" ) {
+                    break ;
+                }
+            }
+            std::cout << std::endl ;
+            if( current_meeting=="" ) {
+                std::cout << ">     uh oh, it looks like I was unable to" << std::endl ;
+            }
+        }
+
         ZRCSDKError result = m_roomService->GetMeetingService()->GetMeetingShareHelper()->ShareCamera( true, camera_id ) ;
         if( result!=ZRCSDKERR_SUCCESS ) {
             std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
