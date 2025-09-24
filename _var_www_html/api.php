@@ -407,7 +407,7 @@ if( $path=="sharing_key" &&
     $method=="GET" ) {
     get() ;
 }
-if( $path=="sharing_code" &&
+if( $path=="pairing_code" &&
     $method=="GET" ) {
     get() ;
 }
