@@ -220,6 +220,9 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
         std::cout << "  get_current_camera" << std::endl ;
         std::cout << "  share_camera" << std::endl ;
         std::cout << "  stop_sharing" << std::endl ;
+        std::cout << "  get_meeting_list" << std::endl ;
+        std::cout << "  join_sip_call <sip uri>" << std::endl ;
+        std::cout << "  get_participant_count" << std::endl ;
     }
     else if( api=="get_state" ) {
         std::cout << get_state( true ) << std::endl ;
@@ -333,6 +336,25 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
         }
 
         ZRCSDKError result = m_roomService->GetMeetingService()->JoinMeeting( meetingID ) ;
+        if( result!=ZRCSDKERR_SUCCESS ) {
+            std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+        }
+    }
+    else if( api=="join_sip_call" ) {
+        std::string sipURI ;
+        iss >> sipURI ;
+        std::cout << "> join_sip_call with sipURI: " << sipURI << std::endl ;
+
+        if( !m_roomService ) {
+            std::cout << ">   error: no room service" ;
+            return ;
+        }
+        if( !m_roomService->GetMeetingService() ) {
+            std::cout << ">   error: no meeting service" ;
+            return ;
+        }
+        RoomSystemProtocolType protocolType = RoomSystemProtocolType::RoomSystemProtocolTypeSIP;
+        ZRCSDKError result = m_roomService->GetMeetingService()->InviteLegacyRoomSystemWithIpOrE164Number(sipURI, protocolType, false);
         if( result!=ZRCSDKERR_SUCCESS ) {
             std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
         }
@@ -616,6 +638,35 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
         ZRCSDKError result = m_roomService->GetMeetingService()->GetMeetingListHelper()->ListMeeting() ;
         if( result!=ZRCSDKERR_SUCCESS ) {
             std::cout << ">   error: unable to get meeting list (ZRCSDKError=" << result << ")" << std::endl ;
+        }
+    }
+    else if ( api=="get_participant_count" ) {
+        std::cout << "> get_participant_count" << std::endl ;
+
+        if( !m_roomService ) {
+            std::cout << ">   error: no room service" ;
+            return ;
+        }
+        if( !m_roomService->GetMeetingService() ) {
+            std::cout << ">   error: no meeting service" ;
+            return ;
+        }
+        if( !m_roomService->GetMeetingService()->GetParticipantHelper() ) {
+            std::cout << ">   error: no participant helper" ;
+            return ;
+        }
+
+        std::vector<MeetingParticipant> participants;
+        ConfSessionType session = ConfSessionType::MasterSession;
+        
+        ZRCSDKError result = m_roomService->GetMeetingService()->GetParticipantHelper()->GetParticipantsInMeeting(participants, session);
+
+        if( result!=ZRCSDKERR_SUCCESS ) {
+            std::cout << ">   error: unable to get participant count (ZRCSDKError=" << result << ")" << std::endl ;
+        } else {
+            std::int32_t participant_count = participants.size() ;
+            std::cout << ">   participant count: " << participant_count << std::endl ;
+            update_state( "meeting/info/participant_count", std::to_string(participant_count) ) ;
         }
     }
     else if( api!="" ) {
