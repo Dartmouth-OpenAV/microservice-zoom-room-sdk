@@ -150,7 +150,7 @@ if( is_cli() ) {
                 sqlite_query( "UPDATE tasks SET in_process='true',
                                                 in_process_since_timestamp=CURRENT_TIMESTAMP WHERE id=:id", [":id"=>$id] ) ;
                 echo "> " . date( "Y-m-d H:i:s" ) . " - forking task {$id}, log @ /var/log/task.{$id}.log\n" ;
-                shell_exec( "/usr/bin/timeout 9 php /var/www/html/api.php {$id} > /var/log/task.{$id}.log 2>&1 &" ) ;
+                shell_exec( "/usr/bin/timeout 40 php /var/www/html/api.php {$id} > /var/log/task.{$id}.log 2>&1 &" ) ;
             } else {
                 $maintenance_every_counter = $maintenance_every_counter - 1 ;
                 if( $maintenance_every_counter==0 ) {
@@ -392,6 +392,10 @@ if( $path=="meeting" &&
     get_hierarchy() ;
 }
 if( $path=="meeting" &&
+    $method=="PUT" ) {
+    set() ;
+}
+if( $path=="sip_call" &&
     $method=="PUT" ) {
     set() ;
 }
@@ -716,6 +720,109 @@ function set_meeting( $device, $data ) {
     }
 }
 
+function set_sip_call( $device, $data ) {
+    if( !is_array($data) ||
+        !array_key_exists('meeting_id', $data) ||
+        !array_key_exists('meeting_passcode', $data) ) {
+        add_error( $device, "erroneous data provided to join_meeting with: " . json_encode($data) ) ;
+    } else {
+        $meeting_status = false ;
+        // maybe we're already in a meeting?
+        if( sqlite_query("SELECT COUNT(1) FROM data WHERE device=:device AND
+                                                          path=:path", [$device,
+                                                                        "meeting/status"], true)>0 &&
+            sqlite_query("SELECT datum FROM data WHERE device=:device AND
+                                                       path=:path", [$device,
+                                                                      "meeting/status"], true)=="in_meeting" ) {
+            file_put_contents( "/dev/shm/{$device}.fifo", "leave_meeting\n" ) ;
+            sleep( 3 ) ;
+        }
+        file_put_contents( "/dev/shm/{$device}.fifo", "start_instant_meeting\n" ) ;
+        $safety_counter = 200 ; // sleeps are 0.1s, so that's 20s total
+        while( $meeting_status!="in_meeting" ) {
+            $meeting_status_count = sqlite_query( "SELECT COUNT(1) FROM data WHERE device=:device AND
+                                                                                   path=:path", [$device,
+                                                                                                 "meeting/status"], true ) ;
+            if( $meeting_status_count==0 ) {
+                $safety_counter-- ;
+                if( $safety_counter<0 ) {
+                    break ;
+                } else {
+                    usleep( 100000 ) ;
+                }
+            } else {
+                $meeting_status = sqlite_query( "SELECT datum FROM data WHERE device=:device AND
+                                                                              path=:path", [$device,
+                                                                                            "meeting/status"], true ) ;
+                if( $meeting_status=="in_meeting" ) {
+                    // Instant meeting started successfully
+                    break ;
+                }
+            }
+        }
+
+        if( $meeting_status=="in_meeting" ) {
+            sqlite_query( "INSERT INTO data (device,
+                        path,
+                        datum,
+                        no_refresh) VALUES (:device,
+                                            :path,
+                                            :datum,
+                                            'true')
+                                            ON CONFLICT (device,
+                                            path) DO UPDATE SET datum=:datum", [':device'=>$device,
+                                                                                ':path'=>"meeting/info/sip_address",
+                                                                                ':datum'=>$data['meeting_id']] ) ;
+            // need to insert the passcode in the URI if being used
+            $meeting_uri_parts = explode("@", $data['meeting_id']) ;
+            if ($data['meeting_passcode']!="") {
+                $meeting_id = $meeting_uri_parts[0] ;
+                $meeting_host = $meeting_uri_parts[1] ;
+                $meeting_uri = "{$meeting_id}.{$data['meeting_passcode']}@{$meeting_host}" ;
+            } else {
+                $meeting_uri = $data['meeting_id'] ;
+            }
+
+            file_put_contents( "/dev/shm/{$device}.fifo", "join_sip_call {$meeting_uri}\n" ) ;
+            $sip_joined = false;
+            $safety_counter = 6 ; // sleeps are 5s, so that's 30s total
+            while( $sip_joined==false ) {
+                if( $safety_counter==0 ) {
+                    break ;
+                } else {
+                    $safety_counter-- ;
+                    sleep( 4 ) ;
+                }
+                file_put_contents( "/dev/shm/{$device}.fifo", "get_participant_count\n" ) ;
+                sleep(1) ;
+                $participant_count = sqlite_query( "SELECT datum FROM data WHERE device=:device AND
+                                                                                   path=:path", [$device,
+                                                                                                 "meeting/info/participant_count"], true ) ;
+                if (!empty($participant_count)) {
+                    if( intval($participant_count) > 1 ) {
+                        $sip_joined = true ;
+                        break ;
+                    }
+                }
+            }
+            if ( $sip_joined==false ) {
+                file_put_contents( "/dev/shm/{$device}.fifo", "leave_meeting\n" ) ;
+            }
+        } else {
+            sqlite_query( "INSERT INTO data (device,
+                                               path,
+                                               datum,
+                                               no_refresh) VALUES (:device,
+                                                                   :path,
+                                                                   :datum,
+                                                                   'true')
+                                  ON CONFLICT (device,
+                                               path) DO UPDATE SET datum=:datum", [':device'=>$device,
+                                                                                   ':path'=>"meeting/last_join_result",
+                                                                                   ':datum'=>"failure"] ) ;
+        }
+    }
+}
 
 function unset_meeting( $device, $data ) {
     file_put_contents( "/dev/shm/{$device}.fifo", "leave_meeting\n" ) ;

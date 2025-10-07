@@ -536,9 +536,9 @@ class AutoIMeetingListHelperSink : public IMeetingListHelperSink
     virtual void OnUpdateMeetingList (ListMeetingResult result, const std::vector< MeetingItem > &meetingList) override {
         std::cout << "< OnUpdateMeetingList" << std::endl ;
         if (result == ListMeetingResult::LIST_MEETING_SUCCESS ) {
-            std::cout << meetingListToJson(meetingList).dump() << std::endl ;
+            //std::cout << meetingListToJson(meetingList).dump() << std::endl ;
+            update_state( "meeting_list", meetingListToJson(meetingList).dump() ) ;
         }
-        update_state( "meeting_list", meetingListToJson(meetingList).dump() ) ;
     }
 
     virtual void OnUpdatedScheduleCalendarEventNotification (ScheduleCalendarEventResult scheduleResult) override {}
@@ -569,12 +569,18 @@ class AutoIParticipantHelperSink : public IParticipantHelperSink
     virtual void OnMeetingParticipantsChanged (ConfSessionType session) override {
         std::cout << "< OnMeetingParticipantsChanged" << std::endl ;
 
-        // segfaults :\
+        // segfaults
         // std::vector<MeetingParticipant> waiting;
-        // m_roomService->GetMeetingService()->GetParticipantHelper()->GetParticipantsInMeeting(waiting, session);
-        // for (ZRCSDK::MeetingParticipant meeting_participant : waiting) {
-        //     std::cout << meeting_participant.userName << std::endl ;
+        // if( m_roomService ) {
+            // std::cout << "m_roomService is not null" << std::endl ;
+            // m_roomService->GetMeetingService()->GetParticipantHelper()->GetParticipantsInMeeting(waiting, session);
+            // for (ZRCSDK::MeetingParticipant meeting_participant : waiting) {
+                // std::cout << meeting_participant.userName << std::endl ;
+            // }
+        // } else {
+            // std::cout << "m_roomService is null" << std::endl ;
         // }
+        
 
         // this works, but it seems problematic to create a new zoomroomsservice for this every time
         // IZRCSDK::GetInstance()->CreateZoomRoomsService( "1337" )->GetMeetingService()->GetParticipantHelper()->GetParticipantsInMeeting(waiting, session );   // session will indicate which list (e.g., waiting room)
