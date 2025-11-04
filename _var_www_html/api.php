@@ -851,18 +851,12 @@ function set_meeting_presence_sharing_camera( $device, $data ) {
     file_put_contents( "/dev/shm/{$device}.fifo", "share_camera {$data}\n" ) ;
 }
 
-
-function get_meeting_muted( $device ) {
-    // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
-    return null ;
-}
-
 function get_meeting_list( $device ) {
     // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
     return null ;
 }
 
-function set_meeting_muted( $device, $data ) {
+function set_meeting_presence_microphone_muted( $device, $data ) {
     if( $data=="true" || $data===true ) {
         file_put_contents( "/dev/shm/{$device}.fifo", "mute\n" ) ;
     } else if( $data=="false" || $data===false ) {
@@ -870,13 +864,7 @@ function set_meeting_muted( $device, $data ) {
     }
 }
 
-
-function get_meeting_video_muted( $device ) {
-    // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
-    return null ;
-}
-
-function set_meeting_video_muted( $device, $data ) {
+function set_meeting_presence_video_muted( $device, $data ) {
     if( $data == "true" || $data === true ) {
         file_put_contents( "/dev/shm/{$device}.fifo", "mute_video\n" ) ;
     } else if ($data == "false" || $data === false) {
