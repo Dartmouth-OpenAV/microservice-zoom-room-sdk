@@ -627,6 +627,10 @@ function set_meeting( $device, $data ) {
         !array_key_exists('meeting_passcode', $data) ) {
         add_error( $device, "erroneous data provided to join_meeting with: " . json_encode($data) ) ;
     } else {
+        if (str_contains($data['meeting_id'],"@")){
+            set_sip_call($device, $data) ;
+            return ;
+        }
         // maybe we're already in a meeting?
         if( sqlite_query("SELECT datum FROM data WHERE device=:device AND
                                                        path=:path", [$device,
