@@ -415,6 +415,10 @@ if( $path=="pairing_code" &&
     $method=="GET" ) {
     get() ;
 }
+if( $path=="paired" &&
+    $method=="GET" ) {
+    get() ;
+}
 if( $path=="errors" &&
     $method=="GET" ) {
     get_errors() ;
