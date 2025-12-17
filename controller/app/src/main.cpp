@@ -94,8 +94,8 @@ std::string get_state_datum( const std::string& path) {
     std::string to_return = "" ;
     rc = sqlite3_step( select ) ;
     if( rc==SQLITE_ROW ) {
-        std::string datum = reinterpret_cast<const char*>( sqlite3_column_text(select, 0) ) ;
-        to_return = datum ;
+        const unsigned char* text = sqlite3_column_text(select, 0);
+        to_return = text ? reinterpret_cast<const char*>(text) : "";
     }
     if( rc!=SQLITE_OK &&
         rc!=SQLITE_DONE &&
