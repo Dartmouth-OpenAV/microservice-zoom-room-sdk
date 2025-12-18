@@ -836,6 +836,21 @@ function unset_meeting( $device, $data ) {
     file_put_contents( "/dev/shm/{$device}.fifo", "leave_meeting\n" ) ;
 }
 
+function get_paired( $device ) {
+    // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
+    return null ;
+}
+
+function get_sharing_key( $device ) {
+    // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
+    return null ;
+}
+
+function get_pairing_code( $device ) {
+    // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
+    return null ;
+}
+
 function get_meeting_presence_sharing_camera( $device ) {
     // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
     return null ;
@@ -860,6 +875,16 @@ function set_meeting_presence_sharing_camera( $device, $data ) {
 }
 
 function get_meeting_list( $device ) {
+    // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
+    return null ;
+}
+
+function get_meeting_presence_video_muted( $device ) {
+    // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
+    return null ;
+}
+
+function get_meeting_presence_microphone_muted( $device ) {
     // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
     return null ;
 }
