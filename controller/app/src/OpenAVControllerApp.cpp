@@ -177,6 +177,10 @@ void OpenAVControllerApp::InitServices()
     IParticipantHelperSink* participantHelperSink = new AutoIParticipantHelperSink() ;
     participantHelper->RegisterSink( participantHelperSink ) ;
 
+    IPreMeetingService*     preMeetingService = m_roomService->GetPreMeetingService() ;
+    IPreMeetingServiceSink* preMeetingServiceSink = new AutoIPreMeetingServiceSink() ;
+    preMeetingService->RegisterSink( preMeetingServiceSink ) ;
+
     createNBStdin() ;
 }
 

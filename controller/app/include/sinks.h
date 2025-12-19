@@ -22,6 +22,7 @@
 #include "IMeetingVideoHelper.h"
 #include "IMeetingListHelper.h"
 #include "IParticipantHelper.h"
+#include "IPreMeetingService.h"
 
 
 USING_NS_ZRCSDK
@@ -611,5 +612,33 @@ class AutoIParticipantHelperSink : public IParticipantHelperSink
     virtual void OnUpdateHasRemoteControlAssistant (bool isAssistantExist) override {}
  
     virtual void OnDownloadingFinished (const std::string &localFilePath, uint32_t result) override {}
+
+};
+
+class AutoIPreMeetingServiceSink : public IPreMeetingServiceSink
+{
+    virtual void OnZRConnectionStateChanged (ConnectionState connectionState) override {
+        std::cout << "< OnZRConnectionStateChanged" << std::endl ;
+        switch(connectionState) {
+        case ConnectionStateConnected:
+            update_state( "connection_state", "connected" ) ;
+            break;
+        case ConnectionStateEstablished:
+            update_state( "connection_state", "established" ) ;
+            break;
+        case ConnectionStateNone:
+            update_state( "connection_state", "invalid" ) ;
+            break;
+        case ConnectionStateDisconnected:
+            update_state( "connection_state", "disconnected" ) ;
+            break;
+        default:
+            update_state( "connection_state", "unknown" ) ;
+            std::cout << "< OnZRConnectionStateChanged unknown connection state: " << connectionState << std::endl ;
+            break;
+        }
+    }
+
+    virtual void OnShutdownOSNot (bool restartOS) override {}
 
 };
