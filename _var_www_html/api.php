@@ -34,7 +34,7 @@ function instantiate_process_for_device_if_needed( $device ) {
         @unlink( "/dev/shm/{$device}.fifo" ) ;
         @unlink( "/dev/shm/{$device}.queue" ) ;
         @unlink( "/dev/shm/{$device}.stdout" ) ;
-        @unlink( "/dev/shm/{$device}.sterr" ) ;
+        @unlink( "/dev/shm/{$device}.stderr" ) ;
 
         echo "instantiating controller app\n" ;
         shell_exec( "/fifo_runner.sh /controller/app/OpenAVControllerApp {$device} /dev/shm/{$device} > /dev/shm/{$device}.stdout 2>/dev/shm/{$device}.stderr &" ) ;

@@ -31,15 +31,11 @@ void inputCallback(uv_timer_t *handle)
     }
 }
 
-
-#if defined(__linux) || defined(__linux__) || defined(linux)
-void heartBeat(uv_timer_t *handle)
-{
-    app.HeartBeat() ;
-}
-#endif
-
 std::string global_device = "unknown" ;
+// Heartbeat is every 150ms. 400 heartbeats = 60 seconds
+int heartbeat_count = 400 ;
+int retry_heartbeat_count = 12 ;
+int max_heartbeat_count = 400 ;
 
 uv_timer_t clientReqTimer;
 uv_timer_t heartBeatTimer;
@@ -108,6 +104,57 @@ std::string get_state_datum( const std::string& path) {
 
     return to_return ;
 }
+
+
+void attempt_reconnect() {
+    std::cout << ">  trying to re-pair" << std::endl ;
+    app.ReceiveCommand( "retry_to_pair" ) ;
+    std::cout << std::endl ;
+    std::string device_activation_code = "" ;
+    auto colon = global_device.find( ":" ) ;
+    if( colon!=std::string::npos ) {
+        auto at = global_device.find( "@", colon + 1 ) ;
+        if( !(at==std::string::npos || at==colon + 1) ) {
+            device_activation_code = global_device.substr( colon + 1, at - (colon + 1) ) ;
+        }
+    }
+    if( device_activation_code!="" ) {
+        std::cout << "> pairing with activation code gotten as parameter" << std::endl ;
+        app.ReceiveCommand( "pair " + device_activation_code ) ;
+    }
+}
+
+
+#if defined(__linux) || defined(__linux__) || defined(linux)
+void heartBeat(uv_timer_t *handle)
+{
+    app.HeartBeat() ;
+    heartbeat_count-- ;
+    if (heartbeat_count <= 0) {
+        std::cout << "> entered heartbeat check" << std::endl;
+        int64_t time_now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+        std::cout << ">  time_now: " << time_now << std::endl;
+        std::string connection_state = get_state_datum("connection_state");
+        std::string paired_state = get_state_datum("paired");
+        if ((connection_state != "connected" && connection_state != "established") || paired_state != "true") {
+            std::cout << ">  not paired or not connected" << std::endl ;
+            if( global_device!="unknown" ) {
+                attempt_reconnect();
+                retry_heartbeat_count = std::min(retry_heartbeat_count * 2, max_heartbeat_count) ;
+                heartbeat_count = retry_heartbeat_count;
+            }
+        } else if (connection_state == "connected" && paired_state == "true") {
+            std::cout << ">  paired and connected" << std::endl ;
+            retry_heartbeat_count = 12;
+            heartbeat_count = 400;
+        } else if (connection_state == "established" && paired_state == "true") {
+            heartbeat_count = retry_heartbeat_count;
+        } else {
+            heartbeat_count = 400;
+        }
+    }
+}
+#endif
     
 
 int main(int argc, char *argv[])
