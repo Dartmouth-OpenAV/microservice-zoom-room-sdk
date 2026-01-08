@@ -419,6 +419,10 @@ if( $path=="paired" &&
     $method=="GET" ) {
     get() ;
 }
+if( $path=="connection_state" &&
+    $method=="GET" ) {
+    get() ;
+}
 if( $path=="errors" &&
     $method=="GET" ) {
     get_errors() ;
