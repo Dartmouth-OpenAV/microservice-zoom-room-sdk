@@ -476,7 +476,13 @@ function get() {
         if( $datum===null || $datum==="" ) {
             close_with_204() ;
         } else {
-            close_with_200( json_decode($datum, true) ) ;
+            $orig_datum = $datum ;
+            $datum = json_decode( $datum, true ) ;
+            if( $datum===null &&
+                strlen($orig_datum)>0 ) {
+                $datum = $orig_datum ;
+            }
+            close_with_200( $datum ) ;
         }
     }
 
