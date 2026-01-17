@@ -3,7 +3,7 @@
 // config
 $refresh_data_every = 1 ; // minutes
 $refresh_for_how_long = 5 ; // minutes
-$maintenance_every = 10 ; // iteration
+$maintenance_every = 300 ; // iteration
 $zoom_room_command_retry_count = 2 ;
 
 
@@ -176,7 +176,9 @@ if( is_cli() ) {
                     foreach( $devices_in_db as $device_in_db ) {
                         $recently_queried_count = sqlite_query( "SELECT COUNT(1) FROM data WHERE device=:device AND
                                                                                                  last_queried_timestamp>=DATETIME('now', '-{$refresh_for_how_long} minutes')", [':device'=>$device_in_db['device']], true ) ;
-                        if( $recently_queried_count==0 ) {
+                        $device_state = sqlite_query( "SELECT datum FROM data WHERE device=:device AND
+                                                                                                path=:path", [':device'=>$device_in_db['device'], ':path'=>'connection_state'], true ) ;
+                        if( $recently_queried_count==0 || ($device_state!='connected' && $device_state!=NULL) ) {
                             $devices_to_reap[] = $device_in_db['device'] ;
                         }
                     }
@@ -203,6 +205,12 @@ if( is_cli() ) {
                                     @unlink( "/dev/shm/{$device}.queue" ) ;
                                     @unlink( "/dev/shm/{$device}.stdout" ) ;
                                     @unlink( "/dev/shm/{$device}.stderr" ) ;
+                                    $device_hostname = explode("@", $device)[1];
+                                    $device_name = explode(".", $device_hostname)[0];
+                                    $activation_code_file = glob("/dev/shm/activation_code_{$device_name}_*")[0];
+                                    if ($activation_code_file && is_file($activation_code_file)) {
+                                        @unlink($activation_code_file);
+                                    }
                                 }
                             }
                             echo "> " . date( "Y-m-d H:i:s" ) . " -   purging db for for device: {$device_to_reap}\n" ;
@@ -311,12 +319,14 @@ $request_uri = $_SERVER['REQUEST_URI'] ;
 $request_uri = explode( "/", $request_uri ) ;
 $device = $request_uri[1] ;
 $activation_code_holder = substr( explode("@", $device )[0], 1 ) ;
+$device_hostname = explode("@", $device )[1] ;
+$device_name = explode(".", $device_hostname)[0] ;
 if( !preg_match('/^\d+-\d+-\d+\d+$/', $activation_code_holder) &&
     str_starts_with(base64_decode($activation_code_holder), "http") ) {
     $ch = curl_init() ;
     $url = base64_decode( $activation_code_holder ) ;
     $activation_code = null ;
-    $activation_code_filename = "/dev/shm/activation_code_" . md5( $url ) ;
+    $activation_code_filename = "/dev/shm/activation_code_" . $device_name . "_" . md5( $url ) ;
     if( file_exists($activation_code_filename) ) {
         $activation_code = file_get_contents( $activation_code_filename ) ;
     } else {
@@ -857,6 +867,11 @@ function get_sharing_key( $device ) {
 }
 
 function get_pairing_code( $device ) {
+    // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
+    return null ;
+}
+
+function get_connection_state( $device ) {
     // this state doesn't come from a device, it's automatically maintained asyncronously by the controller app
     return null ;
 }
