@@ -328,21 +328,31 @@ if( !preg_match('/^\d+-\d+-\d+\d+$/', $activation_code_holder) &&
     if( file_exists($activation_code_filename) ) {
         $activation_code = file_get_contents( $activation_code_filename ) ;
     } else {
-        curl_setopt( $ch, CURLOPT_URL, $url ) ;
-        curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false ) ;
-        curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, "GET" ) ;
-        curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 1 ) ;
-        curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true ) ;
-        curl_setopt( $ch, CURLOPT_TIMEOUT, 2 ) ;
-        $response = curl_exec( $ch ) ;
-        $response_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE ) ;
-        $curl_errno = curl_errno( $ch ) ;
-        curl_close( $ch ) ;
-        if( $response_code==200 ) {
-            if( $response[0]=='"' && $response[strlen($response)-1]=='"' ) {
-                $response = json_decode( $response ) ;
+        if( !file_exists("{$activation_code_filename}.lock") ||
+            (file_exists("{$activation_code_filename}.lock") && (time()-filemtime("{$activation_code_filename}.lock")>120)) ) {
+            touch( "{$activation_code_filename}.lock" ) ;
+            curl_setopt( $ch, CURLOPT_URL, $url ) ;
+            curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false ) ;
+            curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, "GET" ) ;
+            curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 1 ) ;
+            curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true ) ;
+            curl_setopt( $ch, CURLOPT_TIMEOUT, 2 ) ;
+            $response = curl_exec( $ch ) ;
+            $response_code = curl_getinfo( $ch, CURLINFO_HTTP_CODE ) ;
+            $curl_errno = curl_errno( $ch ) ;
+            curl_close( $ch ) ;
+            if( $response_code==200 ) {
+                if( $response[0]=='"' && $response[strlen($response)-1]=='"' ) {
+                    $response = json_decode( $response ) ;
+                }
+                if( preg_match('/^[0-9-]+$/', $response) ) {
+                    $activation_code = $response ;
+                    file_put_contents( $activation_code_filename, $activation_code ) ;
+                    unlink( "{$activation_code_filename}.lock" ) ;
+                }
             }
-            $activation_code = $response ;
+        } else {
+            close_with_204() ;
         }
     }
     if( $activation_code===null ) {
@@ -351,7 +361,6 @@ if( !preg_match('/^\d+-\d+-\d+\d+$/', $activation_code_holder) &&
     }
 
     // we're good!
-    file_put_contents( $activation_code_filename, $activation_code ) ;
     $device = ":{$activation_code}@" . explode( "@", $device )[1] ;
 }
 $path = implode( "/", array_slice($request_uri, 2) ) ;
