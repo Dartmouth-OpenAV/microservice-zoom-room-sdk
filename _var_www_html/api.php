@@ -176,9 +176,7 @@ if( is_cli() ) {
                     foreach( $devices_in_db as $device_in_db ) {
                         $recently_queried_count = sqlite_query( "SELECT COUNT(1) FROM data WHERE device=:device AND
                                                                                                  last_queried_timestamp>=DATETIME('now', '-{$refresh_for_how_long} minutes')", [':device'=>$device_in_db['device']], true ) ;
-                        $device_state = sqlite_query( "SELECT datum FROM data WHERE device=:device AND
-                                                                                                path=:path", [':device'=>$device_in_db['device'], ':path'=>'connection_state'], true ) ;
-                        if( $recently_queried_count==0 || ($device_state!='connected' && $device_state!=NULL) ) {
+                        if( $recently_queried_count==0 ) {
                             $devices_to_reap[] = $device_in_db['device'] ;
                         }
                     }
