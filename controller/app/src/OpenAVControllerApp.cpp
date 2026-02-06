@@ -227,6 +227,7 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
         std::cout << "  get_meeting_list" << std::endl ;
         std::cout << "  join_sip_call <sip uri>" << std::endl ;
         std::cout << "  get_participant_count" << std::endl ;
+        std::cout << "  get_connection_state" << std::endl ;
     }
     else if( api=="get_state" ) {
         std::cout << get_state( true ) << std::endl ;
@@ -672,6 +673,45 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             std::cout << ">   participant count: " << participant_count << std::endl ;
             update_state( "meeting/info/participant_count", std::to_string(participant_count) ) ;
         }
+    }
+    else if ( api=="get_connection_state" ) {
+        std::cout << "> get_connection_state" << std::endl ;
+        if( !m_roomService ) {
+            std::cout << ">   error: no room service" << std::endl;
+            return ;
+        }
+        if( !m_roomService->GetPreMeetingService() ) {
+            std::cout << ">   error: no pre meeting service" << std::endl ;
+            return ;
+        }
+
+        ConnectionState connection_state;
+        ZRCSDKError result = m_roomService->GetPreMeetingService()->GetConnectionState(connection_state);
+        
+        if( result != ZRCSDKERR_SUCCESS ) {
+            std::cout << ">   error: failed to get connection state with error: " << result << std::endl;
+            return ;
+        }
+        std::string connection_state_str;
+        switch(connection_state) {
+        case ConnectionStateConnected:
+            connection_state_str = "connected" ;
+            break;
+        case ConnectionStateEstablished:
+            connection_state_str = "established" ;
+            break;
+        case ConnectionStateNone:
+            connection_state_str = "invalid" ;
+            break;
+        case ConnectionStateDisconnected:
+            connection_state_str = "disconnected" ;
+            break;
+        default:
+            connection_state_str = "unknown" ;
+            std::cout << ">   get_connection_state unknown connection state: " << connection_state << std::endl ;
+            break;
+        }
+        std::cout << ">   connection state: " << connection_state_str << std::endl ;
     }
     else if( api!="" ) {
         std::cout << "> error: unknown command: " << api << std::endl ;
