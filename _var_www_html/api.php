@@ -7,12 +7,12 @@ $maintenance_every = 10 ; // iteration
 $zoom_room_command_retry_count = 2 ;
 
 
-//  _____         _      ____                              _             
-// |_   _|_ _ ___| | __ |  _ \ _ __ ___   ___ ___  ___ ___(_)_ __   __ _ 
+//  _____         _      ____                              _
+// |_   _|_ _ ___| | __ |  _ \ _ __ ___   ___ ___  ___ ___(_)_ __   __ _
 //   | |/ _` / __| |/ / | |_) | '__/ _ \ / __/ _ \/ __/ __| | '_ \ / _` |
 //   | | (_| \__ \   <  |  __/| | | (_) | (_|  __/\__ \__ \ | | | | (_| |
 //   |_|\__,_|___/_|\_\ |_|   |_|  \___/ \___\___||___/___/_|_| |_|\__, |
-//                                                                 |___/ 
+//                                                                 |___/
 
 
 function instantiate_process_for_device_if_needed( $device ) {
@@ -75,7 +75,7 @@ function instantiate_process_for_device_if_needed( $device ) {
 }
 
 
-if( is_cli() ) {  
+if( is_cli() ) {
     if( isset($argv[1]) ) {
         $id = $argv[1] ;
         $task = sqlite_query( "SELECT * FROM tasks WHERE id=:id", [":id"=>$id] ) ;
@@ -125,7 +125,7 @@ if( is_cli() ) {
                 $devices_currently_in_process_for_query[] = $device_currently_in_process['distinct_device'] ;
             }
             $devices_currently_in_process_for_query = "'" . implode( "','", $devices_currently_in_process_for_query ) . "'" ;
-            
+
             // first priority goes to write operations
             $query = "SELECT id FROM tasks WHERE " ;
             if( count($devices_currently_in_process)>0 ) {
@@ -143,7 +143,7 @@ if( is_cli() ) {
                 $query .= "in_process='false' AND method='GET' AND process_at_timestamp<=CURRENT_TIMESTAMP ORDER BY added_timestamp, id ASC LIMIT 1" ;
                 $task = sqlite_query( $query, [] ) ;
             }
-            
+
             if( count($task)>0 ) {
                 // run tasks if any
                 $id = $task[0]['id'] ;
@@ -168,7 +168,7 @@ if( is_cli() ) {
                                                                                                         path=:path", [':device'=>$device_in_needs_passcode_connection_stage['device'],
                                                                                                                       ':path'=>'meeting/connection_stage'] ) ;
                     }
-                    
+
                     //   cleaning up obsolete data
                     // sqlite_query( "DELETE FROM data WHERE last_queried_timestamp<DATETIME('now', '-{$refresh_for_how_long} minutes')", [] ) ;
                     $devices_in_db = sqlite_query( "SELECT DISTINCT(device) AS device FROM data", [] ) ;
@@ -192,7 +192,7 @@ if( is_cli() ) {
                                     $pid = intval( trim(file_get_contents($pid_file)) ) ;
                                     $ppid = get_parent_pid( $pid ) ;
                                     echo "> " . date( "Y-m-d H:i:s" ) . " -   killing pid: {$pid} & ppid: {$ppid} for device: {$device}\n" ;
-                                    
+
                                     posix_kill( $pid, SIGINT ) ;
                                     // to release a blocking fgets
                                     file_put_contents( "/dev/shm/{$device}.fifo", "exit", FILE_APPEND ) ;
@@ -217,7 +217,7 @@ if( is_cli() ) {
                         sqlite_query( "DELETE FROM tasks WHERE in_process='true' AND
                                                                (`in_process_since_timestamp`<DATETIME('now', '-20 seconds') OR in_process_since_timestamp IS NULL)", [] ) ;
                     }
-                    
+
                     //   adding tasks for data that is still being queried
                     $data_still_being_queried = sqlite_query( "SELECT * FROM data WHERE no_refresh='false' AND
                                                                                         (last_queried_timestamp>DATETIME('now', '-{$refresh_for_how_long} minutes') AND
@@ -261,7 +261,7 @@ if( is_cli() ) {
                         }
                         shell_exec( '/usr/bin/find /var/log -name "task.*.log" -type f -mtime +10 -exec rm \{\} \\;' ) ;
                     }
-                    
+
                     // 1% chance of removing task log files older than 10 days
                     if( mt_rand(0,99)==0 ) {
                         echo "> " . date( "Y-m-d H:i:s" ) . " - removing task log files older than 10 days\n" ;
@@ -278,12 +278,12 @@ if( is_cli() ) {
 
 
 
-//  ____            __ _ _       _     _   
-// |  _ \ _ __ ___ / _| (_) __ _| |__ | |_ 
+//  ____            __ _ _       _     _
+// |  _ \ _ __ ___ / _| (_) __ _| |__ | |_
 // | |_) | '__/ _ \ |_| | |/ _` | '_ \| __|
-// |  __/| | |  __/  _| | | (_| | | | | |_ 
+// |  __/| | |  __/  _| | | (_| | | | | |_
 // |_|   |_|  \___|_| |_|_|\__, |_| |_|\__|
-//                         |___/           
+//                         |___/
 
 
 header( "Access-Control-Allow-Origin: *" ) ;
@@ -299,12 +299,12 @@ if( $_SERVER['REQUEST_METHOD']=="OPTIONS" ) {
 
 
 
-//  ____             _   _             
-// |  _ \ ___  _   _| |_(_)_ __   __ _ 
+//  ____             _   _
+// |  _ \ ___  _   _| |_(_)_ __   __ _
 // | |_) / _ \| | | | __| | '_ \ / _` |
 // |  _ < (_) | |_| | |_| | | | | (_| |
 // |_| \_\___/ \__,_|\__|_|_| |_|\__, |
-//                               |___/ 
+//                               |___/
 
 $method = $_SERVER['REQUEST_METHOD'] ;
 $request_uri = $_SERVER['REQUEST_URI'] ;
@@ -434,12 +434,12 @@ exit( 1 ) ;
 
 
 
-//  _   _ _____ _____ ____     ____      _      ______       _   
-// | | | |_   _|_   _|  _ \   / ___| ___| |_   / / ___|  ___| |_ 
+//  _   _ _____ _____ ____     ____      _      ______       _
+// | | | |_   _|_   _|  _ \   / ___| ___| |_   / / ___|  ___| |_
 // | |_| | | |   | | | |_) | | |  _ / _ \ __| / /\___ \ / _ \ __|
-// |  _  | | |   | | |  __/  | |_| |  __/ |_ / /  ___) |  __/ |_ 
+// |  _  | | |   | | |  __/  | |_| |  __/ |_ / /  ___) |  __/ |_
 // |_| |_| |_|   |_| |_|      \____|\___|\__/_/  |____/ \___|\__|
-                                                                                                                                        
+
 
 function get() {
     global $device, $path, $method ;
@@ -471,7 +471,7 @@ function get() {
                                                                                       path=:path", [':device'=>$device,
                                                                                                     ':path'=>$path] ) ;
 
-        
+
 
         if( $datum===null || $datum==="" ) {
             close_with_204() ;
@@ -519,7 +519,7 @@ function get_hierarchy() {
                                                                                                                            ':path1'=>"{$path}/%",
                                                                                                                            ':path2'=>$path] ) ;
 
-        
+
 
         $data = get_path_hierarchy( $data ) ;
 
@@ -528,7 +528,7 @@ function get_hierarchy() {
             $dir = array_shift( $path ) ;
             $data = $data[$dir] ;
         }
-        
+
         if( $data===null || $data==="" ) {
             close_with_204() ;
         } else {
@@ -621,12 +621,12 @@ function delete() {
 
 
 
-//  ____                             _          _    ____      _      ______       _   
-// |  _ \  ___  ___ ___  _   _ _ __ | | ___  __| |  / ___| ___| |_   / / ___|  ___| |_ 
+//  ____                             _          _    ____      _      ______       _
+// |  _ \  ___  ___ ___  _   _ _ __ | | ___  __| |  / ___| ___| |_   / / ___|  ___| |_
 // | | | |/ _ \/ __/ _ \| | | | '_ \| |/ _ \/ _` | | |  _ / _ \ __| / /\___ \ / _ \ __|
-// | |_| |  __/ (_| (_) | |_| | |_) | |  __/ (_| | | |_| |  __/ |_ / /  ___) |  __/ |_ 
+// | |_| |  __/ (_| (_) | |_| | |_) | |  __/ (_| | | |_| |  __/ |_ / /  ___) |  __/ |_
 // |____/ \___|\___\___/ \__,_| .__/|_|\___|\__,_|  \____|\___|\__/_/  |____/ \___|\__|
-//                            |_|                                                                                                           |___/                                      
+//                            |_|                                                                                                           |___/
 
 
 function get_meeting( $device ) {
@@ -946,12 +946,12 @@ function get_errors() {
 
 
 
-//  ____                               _     _____                 _   _                 
-// / ___| _   _ _ __  _ __   ___  _ __| |_  |  ___|   _ _ __   ___| |_(_) ___  _ __  ___ 
+//  ____                               _     _____                 _   _
+// / ___| _   _ _ __  _ __   ___  _ __| |_  |  ___|   _ _ __   ___| |_(_) ___  _ __  ___
 // \___ \| | | | '_ \| '_ \ / _ \| '__| __| | |_ | | | | '_ \ / __| __| |/ _ \| '_ \/ __|
 //  ___) | |_| | |_) | |_) | (_) | |  | |_  |  _|| |_| | | | | (__| |_| | (_) | | | \__ \
 // |____/ \__,_| .__/| .__/ \___/|_|   \__| |_|   \__,_|_| |_|\___|\__|_|\___/|_| |_|___/
-//             |_|   |_|                                                                 
+//             |_|   |_|
 
 
 function close_with_500( $message ) {
@@ -1083,6 +1083,7 @@ function sqlite_query( $query, $params=[], $one_result=false ) {
     if( is_cli() ) {
         $db->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING ) ;
     }
+    $db->exec( "PRAGMA busy_timeout = 1000" ) ;
 
     $query_statement = $db->prepare( $query ) ;
     $ok = $query_statement->execute( $params ) ;

@@ -142,6 +142,10 @@ std::string get_state( bool as_json=true ) {
     int rc = sqlite3_open( "/dev/shm/microservice.db", &db ) ;
     check( rc, db, "open" ) ;
 
+    // Retry for up to 1 second when SQLITE_BUSY/SQLITE_LOCKED occurs
+    rc = sqlite3_busy_timeout( db, 1000 ) ;  // milliseconds
+    check( rc, db, "sqlite3_busy_timeout" ) ;
+
     const char* select_sql =
         "SELECT path,"
         "       datum FROM data WHERE device=:device" ;
@@ -175,6 +179,10 @@ void update_state( const std::string& path, const std::string& datum ) {
     sqlite3* db = nullptr ;
     int rc = sqlite3_open( "/dev/shm/microservice.db", &db ) ;
     check( rc, db, "open" ) ;
+    
+    // Retry for up to 1 second when SQLITE_BUSY/SQLITE_LOCKED occurs
+    rc = sqlite3_busy_timeout( db, 1000 ) ;  // milliseconds
+    check( rc, db, "sqlite3_busy_timeout" ) ;
 
     const char* insert_or_update_sql =
         "INSERT INTO data (device,"
@@ -210,6 +218,10 @@ void delete_state( const std::string& path ) {
     sqlite3* db = nullptr ;
     int rc = sqlite3_open( "/dev/shm/microservice.db", &db ) ;
     check( rc, db, "open" ) ;
+
+    // Retry for up to 1 second when SQLITE_BUSY/SQLITE_LOCKED occurs
+    rc = sqlite3_busy_timeout( db, 1000 ) ;  // milliseconds
+    check( rc, db, "sqlite3_busy_timeout" ) ;
 
     const char* delete_sql =
         "DELETE FROM data WHERE path LIKE :path" ;

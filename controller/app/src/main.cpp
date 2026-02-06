@@ -72,6 +72,14 @@ std::string get_state_datum( const std::string& path) {
         sqlite3_close( db ) ;
     }
 
+    rc = sqlite3_busy_timeout( db, 1000 ) ;  // milliseconds
+    if( rc!=SQLITE_OK &&
+        rc!=SQLITE_DONE &&
+        rc!=SQLITE_ROW ) {
+        std::cerr << "SQLite error (select prepare): " << sqlite3_errmsg( db ) << ", on path: " << path << std::endl ;
+        sqlite3_close( db ) ;
+    }
+
     const char* select_sql =
         "SELECT datum FROM data WHERE device=:device AND"
         "                             path=:path LIMIT 1" ;
