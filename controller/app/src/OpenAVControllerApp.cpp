@@ -228,6 +228,7 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
         std::cout << "  join_sip_call <sip uri>" << std::endl ;
         std::cout << "  get_participant_count" << std::endl ;
         std::cout << "  get_connection_state" << std::endl ;
+        std::cout << "  check_local_connection_state" << std::endl ;
     }
     else if( api=="get_state" ) {
         std::cout << get_state( true ) << std::endl ;
@@ -553,11 +554,14 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
         }
 
         std::vector<ZRCSDK::Device> cameras = {};
-        m_roomService->GetSettingService()->GetCameraList(cameras) ;
+        ZRCSDKError result = m_roomService->GetSettingService()->GetCameraList(cameras) ;
         for (ZRCSDK::Device camera : cameras) {
             std::cout << camera.id << " / " ;
             std::cout << camera.name ;
             std::cout << std::endl ;
+        }
+        if( result!=ZRCSDKERR_SUCCESS ) {
+            std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
         }
     }
     else if( api=="get_current_camera" ) {
@@ -712,6 +716,34 @@ void OpenAVControllerApp::ReceiveCommand(std::string command)
             break;
         }
         std::cout << ">   connection state: " << connection_state_str << std::endl ;
+    }
+    else if( api=="check_local_connection_state" ) {
+        /* in response to a bug with Zoom cloud thinking we are connected while the local hardware isn't 
+             this is the only approach we found to exert an inert local mechanism and verify whether or
+             not we are connected to the local hardware */
+        std::cout << "> check_local_connection_state" << std::endl ;
+
+        if( !m_roomService ) {
+            std::cout << ">   error: no room service" ;
+            return ;
+        }
+        if( !m_roomService->GetSettingService() ) {
+            std::cout << ">   error: no setting service" ;
+            return ;
+        }
+
+        // std::vector<ZRCSDK::NetworkAdapterInfo> network_adapter_infos = {};
+        // ZRCSDKError result = m_roomService->GetSettingService()->GetNetWorkAdapterInfo(network_adapter_infos) ;
+        // if( result!=ZRCSDKERR_SUCCESS ) {
+        //     std::cout << ">   error: unable to send (ZRCSDKError=" << result << ")" << std::endl ;
+        // }
+        std::vector<ZRCSDK::Device> cameras = {};
+        ZRCSDKError result = m_roomService->GetSettingService()->GetCameraList(cameras) ;
+        if( result==ZRCSDKERR_NOT_CONNECT_TO_ZOOMROOM ) {
+            std::cout << ">   not connected to local hardware, updating DB to reflect state" << std::endl ;
+            update_state( "paired", "false" ) ;
+            update_state( "connection_state", "disconnected" ) ;
+        }
     }
     else if( api!="" ) {
         std::cout << "> error: unknown command: " << api << std::endl ;

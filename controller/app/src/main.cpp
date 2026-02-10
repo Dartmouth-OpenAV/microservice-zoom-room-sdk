@@ -36,6 +36,7 @@ std::string global_device = "unknown" ;
 int heartbeat_count = 400 ;
 int retry_heartbeat_count = 12 ;
 int max_heartbeat_count = 400 ;
+int hearbeat_check_local_connection_counter = 5 ;
 
 uv_timer_t clientReqTimer;
 uv_timer_t heartBeatTimer;
@@ -142,6 +143,11 @@ void heartBeat(uv_timer_t *handle)
         std::cout << "> entered heartbeat check" << std::endl;
         int64_t time_now = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
         std::cout << ">  time_now: " << time_now << std::endl;
+        hearbeat_check_local_connection_counter-- ;
+        if( hearbeat_check_local_connection_counter<=0 ) {
+            app.ReceiveCommand( "check_local_connection_state" ) ;
+            hearbeat_check_local_connection_counter = 5 ;
+        }
         std::string connection_state = get_state_datum("connection_state");
         std::string paired_state = get_state_datum("paired");
         if ((connection_state != "connected" && connection_state != "established") || paired_state != "true") {
