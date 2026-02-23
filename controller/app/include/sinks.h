@@ -189,14 +189,17 @@ void update_state( const std::string& path, const std::string& datum ) {
         "                  path,"
         "                  datum,"
         "                  no_refresh,"
-        "                  last_refreshed_timestamp) VALUES (:device,"
+        "                  last_refreshed_timestamp,"
+        "                  temp_set_value          ) VALUES (:device,"
         "                                                    :path,"
         "                                                    :datum,"
         "                                                    'true',"
-        "                                                    CURRENT_TIMESTAMP)"
+        "                                                    CURRENT_TIMESTAMP,"
+        "                                                    NULL)"
         " ON CONFLICT(device,"
         "             path) DO UPDATE SET datum=:datum,"
-        "                                 last_refreshed_timestamp=CURRENT_TIMESTAMP;" ;
+        "                                 last_refreshed_timestamp=CURRENT_TIMESTAMP,"
+        "                                 temp_set_value=NULL" ;
     sqlite3_stmt* insert_or_update = nullptr ;
     rc = sqlite3_prepare_v2( db, insert_or_update_sql, -1, &insert_or_update, nullptr ) ;
     check( rc, db, "insert or update prepare" ) ;

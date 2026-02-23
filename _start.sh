@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS data (
   datum TEXT DEFAULT NULL,
   no_refresh TEXT DEFAULT 'false',
   last_queried_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  last_refreshed_timestamp TIMESTAMP DEFAULT NULL
+  last_refreshed_timestamp TIMESTAMP DEFAULT NULL,
+  temp_set_value TEXT DEFAULT NULL
 );
 CREATE UNIQUE INDEX device_path ON data(device, path);
 

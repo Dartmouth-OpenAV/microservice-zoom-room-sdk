@@ -483,9 +483,21 @@ function get() {
                                                                                           ':path'=>$path] ) ;
             // add_error( $device, "more than 1 entry count for {$method} {$path} with: {$entry_count}" ) ;
         }
-        $datum = sqlite_query( "SELECT datum FROM data WHERE device=:device AND
+
+        $result = sqlite_query( "SELECT datum, temp_set_value FROM data WHERE device=:device AND
                                                              path=:path LIMIT 1", [':device'=>$device,
-                                                                                   ':path'=>$path], true ) ;
+                                                                                   ':path'=>$path] ) ;
+
+        if( $result && count($result) > 0 ) {
+            $datum = $result[0]['datum'];
+            $temp_set_value = $result[0]['temp_set_value'];
+            if( $temp_set_value != null ) {
+                $datum = $temp_set_value;
+            }
+        } else {
+            $datum = null;
+        }
+
         sqlite_query( "UPDATE data SET last_queried_timestamp=CURRENT_TIMESTAMP WHERE device=:device AND
                                                                                       path=:path", [':device'=>$device,
                                                                                                     ':path'=>$path] ) ;
@@ -588,6 +600,20 @@ function set( $no_refresh=false ) {
                                                                     ':datum'=>$datum] ) ;
 
     }
+    // Add body into temp_set_value. Once the set is complete, temp_set_value will go back to NULL
+    // Provides a temporary value for GETs to return
+    // Testing with video and microphone mute before expanding to other paths
+    if( $path == "meeting/presence/video_muted" || $path == "meeting/presence/microphone_muted" ) {
+        sqlite_query( "INSERT INTO data (device,
+                                         path,
+                                         temp_set_value) VALUES (:device,
+                                                     :path,
+                                                     :datum)
+                          ON CONFLICT(device,
+                                      path) DO UPDATE SET temp_set_value=:datum", [':device'=>$device,
+                                                                                    ':path'=>$path,
+                                                                                    ':datum'=>$datum]);
+    } 
 
     close_with_200( "ok" ) ;
 }
