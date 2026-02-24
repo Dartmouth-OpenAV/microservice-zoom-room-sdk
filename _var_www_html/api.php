@@ -604,15 +604,15 @@ function set( $no_refresh=false ) {
     // Provides a temporary value for GETs to return
     // Testing with video and microphone mute before expanding to other paths
     if( $path == "meeting/presence/video_muted" || $path == "meeting/presence/microphone_muted" ) {
-        sqlite_query( "INSERT INTO data (device,
-                                         path,
-                                         temp_set_value) VALUES (:device,
-                                                     :path,
-                                                     :datum)
-                          ON CONFLICT(device,
-                                      path) DO UPDATE SET temp_set_value=:datum", [':device'=>$device,
-                                                                                    ':path'=>$path,
-                                                                                    ':datum'=>$datum]);
+        sqlite_query( "UPDATE data SET temp_set_value=:datum WHERE device=:device AND
+                                                                    path=:path AND
+                                                                    EXISTS ( SELECT 1
+                                                                        FROM data
+                                                                        WHERE device=:device
+                                                                        AND path='meeting/status'
+                                                                        AND datum='in_meeting' )",[':device'=>$device,
+                                                                                                    ':path'=>$path,
+                                                                                                    ':datum'=>$datum] ) ;
     } 
 
     close_with_200( "ok" ) ;
