@@ -613,7 +613,7 @@ function set( $no_refresh=false ) {
                                                                         AND datum='in_meeting' )",[':device'=>$device,
                                                                                                     ':path'=>$path,
                                                                                                     ':datum'=>$datum] ) ;
-    } 
+    }
 
     close_with_200( "ok" ) ;
 }
@@ -760,6 +760,9 @@ function set_meeting( $device, $data ) {
                                                             path) DO UPDATE SET datum=:datum", [':device'=>$device,
                                                                                                 ':path'=>"meeting/last_join_result",
                                                                                                 ':datum'=>"success"] ) ;
+                        sleep( 2 ) ;
+                        set_meeting_presence_microphone_muted( $device, false ) ;
+                        set_meeting_presence_video_muted( $device, false ) ;
                         break ;
                     }
                 }
